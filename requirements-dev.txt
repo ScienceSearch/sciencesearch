@@ -1,0 +1,9 @@
+beautifulsoup4
+black
+pylint
+gensim
+pandas
+rake_nltk
+scikit-learn
+yake
+git+https://github.com/boudinfl/pke.git
