@@ -3,9 +3,7 @@ Perform a sweep with NLP models
 """
 
 # stdlib
-from collections import defaultdict
 import itertools
-from operator import attrgetter
 from typing import Optional, Any, Iterable
 
 # third-party
@@ -112,7 +110,7 @@ class SweepResult:
 class Sweep:
     """Sweep with a given algorithm and set of parameters."""
 
-    def __init__(self, alg: type, **params):
+    def __init__(self, alg: type, ignore_case=True, **params):
         try:
             assert issubclass(alg, Algorithm)
         except (AssertionError, TypeError):
@@ -121,6 +119,7 @@ class Sweep:
         self._alg_name = alg.__name__
         self._alg_params = params
         self._ranges = {}
+        self._lower = ignore_case
 
     def set_param_range(
         self,
@@ -205,46 +204,18 @@ class Sweep:
         rvalues = [self._ranges[k] for k in rnames]
         # go through all possible combinations
         sweep_result = SweepResult()
+        if self._lower:
+            text = text.lower()
         for item in itertools.product(*rvalues):
             params = {rnames[i]: item[i] for i in range(len(item))}
             params.update(self._alg_params)
             alg = self._alg(**params)
             kw = alg.run(text)
+            if self._lower:
+                kw = [s.lower() for s in kw]
             one_result = ExtractionResult(
                 algorithm=self._alg_name, parameters=params.copy(), keywords=kw
             )
             sweep_result.add_result(one_result)
         return sweep_result
 
-
-# TODO: test this!!
-class Hyper:
-    def __init__(self):
-        self._sweeps = []
-
-    def add_sweep(self, sweep: Sweep):
-        self._sweeps.append(sweep)
-
-    def get_top(
-        self, text: str, keywords: list[str], epsilon=0.1
-    ) -> list[ExtractionResult]:
-        """Return all parameter/alg combinations that resulted in an F1 score
-        within 'epsilon' of the best one, on the given text with the given
-        ground truth keywords.
-        """
-        ex_res = []
-        for sw in self._sweeps:
-            res = sw.run(text)
-            res.ground_truth = keywords
-            res.add_f1_score()
-            # add to flattened list of ExtractionResult objects
-            ex_res.extend(res.results)
-        # sort all results by F1 score
-        ex_res.sort(key=attrgetter("f1_score"))
-        # return top results within 'epsilon'
-        i = len(ex_res) - 1
-        top = ex_res[i].f1_score
-        lb = top - epsilon
-        while i >= 0 and ex_res[i].f1_score < lb:
-            i -= 1
-        return ex_res[i + 1 :]
