@@ -3,8 +3,6 @@ Perform a sweep with NLP models
 """
 
 # stdlib
-from collections import defaultdict
-from dataclasses import dataclass
 import itertools
 from typing import Optional, Any, Iterable
 
@@ -14,6 +12,7 @@ import pandas as pd
 
 # package
 from sciencesearch.nlp.models import Algorithm
+
 
 def _get_true_pred(
     true_kw: Iterable[str], pred_kw: Iterable[str]
@@ -44,24 +43,36 @@ def get_f1_score(ground_truth: Iterable[str], extracted: Iterable[str]) -> float
     all_kw, y_true, y_pred = _get_true_pred(ground_truth, extracted)
     return f1_score(y_true, y_pred)
 
+
 ########################################
 
+F1_SCORE = "F1"
+
+
 class ExtractionResult:
-    def __init__(self, parameters: dict[str, Any], keywords: list[str]):
+
+    def __init__(self, algorithm: str, parameters: dict[str, Any], keywords: list[str]):
+        self.algorithm = algorithm
         self.parameters = parameters
         self.keywords = keywords
         self.scores = {}
 
     def add_score(self, name, value):
         self.scores[name] = value
-        
+
+    @property
+    def f1_score(self):
+        return self.scores[F1_SCORE]
+
     def get_dict(self):
         d = self.parameters.copy()
         d["keywords"] = self.keywords
         d.update(self.scores)
         return d
 
+
 class SweepResult:
+
     def __init__(self):
         self._r = []
         self.ground_truth = []
@@ -72,17 +83,19 @@ class SweepResult:
 
     def add_result(self, ext: ExtractionResult):
         self._r.append(ext)
-        
+
     def add_score(self, score_name: str, calculate_score=None):
         if not self.ground_truth:
-            raise ValueError("Set attribute 'ground_truth' to a list of keywords before calling add_score()")
+            raise ValueError(
+                "Set attribute 'ground_truth' to a list of keywords before calling add_score()"
+            )
         for r in self._r:
             score = calculate_score(self.ground_truth, r.keywords)
             r.add_score(score_name, score)
 
     def add_f1_score(self):
-        return self.add_score(score_name="F1", calculate_score=get_f1_score)
-        
+        return self.add_score(score_name=F1_SCORE, calculate_score=get_f1_score)
+
     def as_dataframe(self) -> pd.DataFrame:
         data = [x.get_dict() for x in self._r]
         return pd.DataFrame(data)
@@ -92,18 +105,21 @@ class SweepResult:
         for r in self._r:
             all_kw = all_kw.union(set(r.keywords))
         return all_kw
-        
-class Sweep:
-    """Run a sweep on a single text."""
 
-    def __init__(self, alg: type, **params):
+
+class Sweep:
+    """Sweep with a given algorithm and set of parameters."""
+
+    def __init__(self, alg: type, ignore_case=True, **params):
         try:
             assert issubclass(alg, Algorithm)
         except (AssertionError, TypeError):
             raise TypeError("Input must be a subclass (not instance) of Algorithm")
         self._alg = alg
+        self._alg_name = alg.__name__
         self._alg_params = params
         self._ranges = {}
+        self._lower = ignore_case
 
     def set_param_range(
         self,
@@ -188,13 +204,18 @@ class Sweep:
         rvalues = [self._ranges[k] for k in rnames]
         # go through all possible combinations
         sweep_result = SweepResult()
+        if self._lower:
+            text = text.lower()
         for item in itertools.product(*rvalues):
             params = {rnames[i]: item[i] for i in range(len(item))}
             params.update(self._alg_params)
             alg = self._alg(**params)
             kw = alg.run(text)
-            one_result = ExtractionResult(parameters=params.copy(), keywords=kw)
+            if self._lower:
+                kw = [s.lower() for s in kw]
+            one_result = ExtractionResult(
+                algorithm=self._alg_name, parameters=params.copy(), keywords=kw
+            )
             sweep_result.add_result(one_result)
         return sweep_result
-
 
