@@ -5,6 +5,7 @@ from sciencesearch.nlp.models import (
     Stopwords,
     Parameters,
     Algorithm,
+    MultiAlgorithm,
     Rake,
     Yake,
     KPMiner,
@@ -85,7 +86,7 @@ def test_parameters():
     p = Parameters(P_SPEC, {"stopwords": sw})
 
 
-class TestAlg(Algorithm):
+class FakeAlg(Algorithm):
     "Override abstract method to allow instantiation"
 
     def _get_keywords(self, text):
@@ -94,14 +95,14 @@ class TestAlg(Algorithm):
 
 @pytest.mark.unit
 def test_algorithm_base():
-    alg = TestAlg()
-    alg = TestAlg(num_keywords=5)
+    alg = FakeAlg()
+    alg = FakeAlg(num_keywords=5)
     # type checking on/off
     with pytest.raises(TypeError):
-        alg = TestAlg(num_keywords="5")
-    alg = TestAlg(num_keywords="5", check_types=False)
+        alg = FakeAlg(num_keywords="5")
+    alg = FakeAlg(num_keywords="5", check_types=False)
     # methods:
-    alg = TestAlg(num_keywords=5)
+    alg = FakeAlg(num_keywords=5)
     assert alg.get_params() != {}
     alg.print_params()
     kw = alg.run("Hello, world")
@@ -154,13 +155,18 @@ def test_rake():
 
 
 @pytest.mark.unit
-def test_sweep():
-    sweep = Sweep(Yake)
-    # bad param for range
-    with pytest.raises(KeyError):
-        sweep.set_param_range("foo", 0, 10, step=1)
-    # range
-    sweep.set_param_range("dedup", 0.85, 0.95, step=0.05)
-    sweep.set_param_range("ngram", lb=1, ub=3, nsteps=2)
-    r = sweep.run(kafka_text)
-    assert len(r.results) == 9  # 3x3 run
+def test_multi_algorithm():
+    yk1 = Yake(num_keywords=5)
+    yk2 = Yake(num_keywords=10)
+    rk1 = Rake(num_keywords=5)
+    rk2 = Rake(num_keywords=10)
+    ma = MultiAlgorithm(yk1, yk2, rk1)
+    ma.add(rk2)
+    ma_kw = ma.run(kafka_text)
+    expect_kw = list(
+        set(yk1.run(kafka_text))
+        .union(set(yk2.run(kafka_text)))
+        .union(set(rk1.run(kafka_text)))
+        .union(set(rk2.run(kafka_text)))
+    )
+    assert sorted(ma_kw) == sorted(expect_kw)

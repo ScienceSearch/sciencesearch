@@ -540,3 +540,19 @@ class Yake(Algorithm):
         else:
             kw = list(keywords)
         return kw
+
+
+class MultiAlgorithm(Algorithm):
+    def __init__(self, *algs):
+        super().__init__(check_types=False, stopwords=[])
+        self._algorithms = list(algs)
+
+    def add(self, alg: Algorithm):
+        self._algorithms.append(alg)
+
+    def _get_keywords(self, text):
+        merged_kw = set()
+        for alg in self._algorithms:
+            for word in alg.run(text):
+                merged_kw.add(word)
+        return list(merged_kw)
