@@ -28,6 +28,7 @@ classifiers = [
 keywords = ["ScienceSearch", "data science", "natural language processing", "machine learning"]
 dynamic = ["version"]
 dependencies = [
+    "scipy<=1.12",
     "beautifulsoup4",
     "gensim",
     "rake_nltk",
