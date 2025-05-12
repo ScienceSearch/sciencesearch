@@ -42,7 +42,6 @@ class Hyper:
         return ex_res[i + 1 :]
 
 
-# TODO: TEST
 def algorithms_from_results(er: list[ExtractionResult]) -> list[Algorithm]:
     obj_list = []
     unique_alg = set()
@@ -51,6 +50,7 @@ def algorithms_from_results(er: list[ExtractionResult]) -> list[Algorithm]:
         key = [id(res.algorithm)]
         for pkey, pval in res.parameters.items():
             key.append((pkey, str(pval)))
+        key = tuple(key)
         if key in unique_alg:
             continue
         unique_alg.add(key)

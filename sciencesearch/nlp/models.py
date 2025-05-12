@@ -138,6 +138,10 @@ class Parameters:
             return self._v[name]
         raise KeyError(f"Cannot get value for unknown parameter '{name}'")
 
+    def str(self):
+        plist = [f"{k}={v}" for k, v in self._v.items()]
+        return ", ".join(plist)
+
 
 #: Parameter specification type
 PS = namedtuple("Spec", ("name", "type", "desc", "default"))
@@ -194,6 +198,7 @@ class Algorithm(ABC):
                     f"Could not load stopwords from default file '{sw_file}': {err}"
                 )
         self._run_timings = {}
+        self._name = self.__class__.__name__
 
     @classmethod
     def get_params(cls):
@@ -209,6 +214,8 @@ class Algorithm(ABC):
             print(f"  - {p.type.__name__} {p.name}: {p.desc}. Default is {p.default}")
 
     def run(self, text: str) -> list[str]:
+        _log.info(f"Run algorithm: {self._name}")
+        _log.debug(f"Run with parameters: {str(self.params)}")
         t0 = time.time()
         text = self._stem_text(text)
         t1 = time.time() - t0
@@ -218,6 +225,9 @@ class Algorithm(ABC):
         if not kw:
             # stop and catch fire if no keywords (looking at you, KPMiner)
             raise RuntimeError("No keywords extracted")
+        _log.debug(
+            f"Finished algorithm {self._name} time={self._run_timings['total']:.3g}s"
+        )
         return kw
 
     @abstractmethod
@@ -348,6 +358,8 @@ class Algorithm(ABC):
     def _scale_scores(self, scores, flip: bool = False):
         min_score = min(scores)
         max_score = max(scores)
+        if min_score == max_score:
+            return scores.copy()
         delta = max_score - min_score
         offset = -min_score
         factor = self._SCORE_RANGE / delta
@@ -459,13 +471,6 @@ class Rake(Algorithm):
             "are output by rake",
             True,
         ),
-        PS(
-            "weights",
-            list,
-            "values used by a certain strategy to filter keywords from all outputs "
-            "into top number of keywords",
-            [0.7, 0.3],
-        ),
     ]
 
     def __init__(self, **kwargs):
@@ -542,9 +547,12 @@ class Yake(Algorithm):
         return kw
 
 
-class MultiAlgorithm(Algorithm):
-    def __init__(self, *algs):
-        super().__init__(check_types=False, stopwords=[])
+class Ensemble(Algorithm):
+    def __init__(self, *algs, **kwargs):
+        if "stopwords" not in kwargs:
+            # don't add default stopwords
+            kwargs["stopwords"] = []
+        super().__init__(check_types=False, **kwargs)
         self._algorithms = list(algs)
 
     def add(self, alg: Algorithm):
@@ -552,7 +560,9 @@ class MultiAlgorithm(Algorithm):
 
     def _get_keywords(self, text):
         merged_kw = set()
+        scores = {}
         for alg in self._algorithms:
-            for word in alg.run(text):
-                merged_kw.add(word)
+            keywords = alg.run(text)
+            for kw in keywords:
+                merged_kw.add(kw)
         return list(merged_kw)

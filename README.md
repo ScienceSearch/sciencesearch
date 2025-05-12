@@ -28,6 +28,11 @@ python -m spacy download en_core_web_sm
 python -c "import nltk; nltk.download('stopwords')"
 ```
 
+## Running
+
+There is an example notebook under `examples/pipeline.ipynb` that runs using the data under
+`data/jft`.
+
 ## Authors
 
 Lawrence Berkeley National Laboratory:

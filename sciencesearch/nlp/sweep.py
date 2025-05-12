@@ -208,6 +208,7 @@ class Sweep:
         if self._lower:
             text = text.lower()
         for item in itertools.product(*rvalues):
+            # print(f"@@ alg={self._alg}, params = {item}")
             params = {rnames[i]: item[i] for i in range(len(item))}
             params.update(self._alg_params)
             alg = self._alg(**params)

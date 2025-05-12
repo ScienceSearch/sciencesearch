@@ -2,25 +2,73 @@
 Training pipeline
 """
 
-# TODO: Develop a Notebook supported by this file to demonstrate
-# TODO: the keywords in the context of search.
-# A. Hyperparameter -> Ensemble
-# 1) load list of filenames, user-keywords from a file
-#    also in file: epsilon for "best" F1 score,
-#    max #algorithms total in ensemble.
-# 2) for each pair, run Hyper with the keywords as ground truth
-#    get a list of algorithms/parameters with an F1 score
-#    within epsilon of the best (Hyper.get_top_f1())
-#    and add to the master list
-# 3) After all training is run, sort master list by F1 again
-#    then take 'max #algorithms' from the top and use that
-#    to create the model.Ensemble (via hyper.algorithms_from_results)
-# 4) save the ensemble to a file with pickle e.g. ensemble1.pkl
-# B. Ensemble -> Search db (example search, not smart or good)
-# 1) config file with pickled Ensemble and output 'database' and directory -> Loader
-# 2) Loader.add_text() function that runs the ensemble to extract
-#    keywords, then puts the resulting text in a directory and the keywords in the 'database'
-# C. Search
-# 1) A simple class SearchEngine that takes the same config to know the 'database' and directory
-# 2) User can call SearchEngine.search(keywords) to retrieve all texts that have one or
-#    more keyword matches from the 'database'
+from pathlib import Path
+import pickle
+from .hyper import Hyper
+from .models import KPMiner, Rake, Yake, Ensemble
+
+
+def train_hyper(
+    hyperparameter: Hyper,
+    file_kw: dict[str, list[str]],
+    epsilon: float = 0.1,
+    save_file: str | Path = None,
+    directory: Path = None,
+):
+    """Train the hyperparameters on a list of text files with associated expected keywords.
+
+    Args:
+        hyperparameter: Hyperparameter class for running the training.
+        file_kw: Mapping of filenames to a list of keywords to use as the gold_standard.
+        epsilon: How close to the best F1 score a score must be to be considered 'best'
+        save_file: Where to pickle the results. Defaults to None, meaning don't save
+        directory:
+
+    Raises:
+        ValueError: _description_
+    """
+    hyper_results = []
+    root_dir = directory if directory else Path.cwd()
+    for training_file, gold_kw in file_kw.items():
+        with open(root_dir / training_file) as f:
+            print(f"Processing file: {Path(f.name).name}")
+            text = f.read()
+            res = hyperparameter.get_top_f1(text, gold_kw, epsilon=epsilon)
+            hyper_results.extend(res)
+    # save to file
+    if save_file:
+        with open(save_file, "wb") as f:
+            pickle.dump(hyper_results, f)
+    return hyper_results
+
+
+def load_hyper(save_file: str | Path):
+    with open(save_file, "rb") as f:
+        hyper_results = pickle.load(f)
+    return hyper_results
+
+
+def run_hyper(
+    hyper_results,
+    text_file: str | Path = None,
+    text: str = None,
+    num_keywords: int = 10,
+):
+    # pick one from each algorithm
+    alg_map, n = {KPMiner: None, Rake: None, Yake: None}, 0
+    for res in hyper_results:
+        if alg_map[res.algorithm] is None:
+            alg_map[res.algorithm] = res.algorithm(**res.parameters)
+            n += 1
+        if n == 3:
+            break
+    ensm = Ensemble(
+        *alg_map.values(),
+        num_keywords=num_keywords,
+        keyword_sort=[{"score": 0.75, "occ": 0.25}],
+    )
+    if text_file is not None:
+        text = Path(text_file).open().read()
+    elif text is None:
+        raise ValueError("One of 'text' or 'text_file' should be provided")
+    return ensm.run(text)
