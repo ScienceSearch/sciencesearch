@@ -42,6 +42,7 @@ class Hyper:
         return ex_res[i + 1 :]
 
 
+# TODO: TEST
 def algorithms_from_results(er: list[ExtractionResult]) -> list[Algorithm]:
     obj_list = []
     unique_alg = set()
