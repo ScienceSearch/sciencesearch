@@ -24,14 +24,23 @@ class Searcher:
     """Dead simple search that can be created from a config file and some input files."""
 
     def __init__(self, file_keywords=None):
+        """Constructor."""
         self._db = defaultdict(set)
+        self._fkw = {}
         if file_keywords:
             self.add_entries(file_keywords)
 
-    def add_entries(self, file_keywords):
+    def add_entries(self, file_keywords: dict[str, list[str]]):
+        """Add a map of files to a list of keywords."""
+        self._fkw.update(file_keywords)
         for fname, kwlist in file_keywords.items():
             for kw in kwlist:
                 self._db[kw].add(fname)
+
+    @property
+    def file_keywords(self) -> dict[str, list[str]]:
+        """ "Get the current mapping of files to the list of keywords associated with each."""
+        return self._fkw.copy()
 
     @classmethod
     def from_config(cls, config_file) -> "Searcher":
