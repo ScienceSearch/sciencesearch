@@ -82,7 +82,7 @@
         }
     },
     "training": {
-        "directory": ".",
+        "directory": "../private_data/slac_logs",
         "input_files": ["*.txt"],
         "keywords": ["slac_keywords.csv"],
         "epsilon": 0.05,
