@@ -5,7 +5,7 @@ from sciencesearch.nlp.models import (
     Stopwords,
     Parameters,
     Algorithm,
-    MultiAlgorithm,
+    Ensemble,
     Rake,
     Yake,
     KPMiner,
@@ -160,7 +160,7 @@ def test_multi_algorithm():
     yk2 = Yake(num_keywords=10)
     rk1 = Rake(num_keywords=5)
     rk2 = Rake(num_keywords=10)
-    ma = MultiAlgorithm(yk1, yk2, rk1)
+    ma = Ensemble(yk1, yk2, rk1)
     ma.add(rk2)
     ma_kw = ma.run(kafka_text)
     expect_kw = list(
