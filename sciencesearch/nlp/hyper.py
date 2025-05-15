@@ -6,6 +6,7 @@ Hyperparameter tuning
 from operator import attrgetter
 
 # package
+from sciencesearch.nlp.models import Algorithm
 from sciencesearch.nlp.sweep import ExtractionResult, Sweep
 
 
@@ -39,3 +40,19 @@ class Hyper:
         while i >= 0 and ex_res[i].f1_score >= lb:
             i -= 1
         return ex_res[i + 1 :]
+
+
+def algorithms_from_results(er: list[ExtractionResult]) -> list[Algorithm]:
+    obj_list = []
+    unique_alg = set()
+    for res in er:
+        # build unique key for algorithm and parameters
+        key = [id(res.algorithm)]
+        for pkey, pval in res.parameters.items():
+            key.append((pkey, str(pval)))
+        key = tuple(key)
+        if key in unique_alg:
+            continue
+        unique_alg.add(key)
+        obj_list.append(res.algorithm(**res.parameters))
+    return obj_list

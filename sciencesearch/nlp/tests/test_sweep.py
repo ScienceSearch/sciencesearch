@@ -4,7 +4,8 @@ Test sweep module
 
 import pytest
 from sciencesearch.nlp.models import KPMiner, Rake, Yake
-from sciencesearch.nlp.sweep import Sweep, SweepResult, get_f1_score, Hyper
+from sciencesearch.nlp.sweep import Sweep, get_f1_score
+from sciencesearch.nlp.hyper import Hyper
 
 
 @pytest.mark.unit
@@ -52,7 +53,7 @@ def yake_sweep():
 
 def test_kpminer_sweep(kpminer_sweep):
     res = kpminer_sweep.run(sweep_text)
-    assert len(res.results) == 2    
+    assert len(res.results) == 2
 
 
 def test_rake_sweep(rake_sweep):

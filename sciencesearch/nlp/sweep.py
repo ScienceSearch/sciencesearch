@@ -51,7 +51,9 @@ F1_SCORE = "F1"
 
 class ExtractionResult:
 
-    def __init__(self, algorithm: str, parameters: dict[str, Any], keywords: list[str]):
+    def __init__(
+        self, algorithm: type, parameters: dict[str, Any], keywords: list[str]
+    ):
         self.algorithm = algorithm
         self.parameters = parameters
         self.keywords = keywords
@@ -116,7 +118,6 @@ class Sweep:
         except (AssertionError, TypeError):
             raise TypeError("Input must be a subclass (not instance) of Algorithm")
         self._alg = alg
-        self._alg_name = alg.__name__
         self._alg_params = params
         self._ranges = {}
         self._lower = ignore_case
@@ -207,6 +208,7 @@ class Sweep:
         if self._lower:
             text = text.lower()
         for item in itertools.product(*rvalues):
+            # print(f"@@ alg={self._alg}, params = {item}")
             params = {rnames[i]: item[i] for i in range(len(item))}
             params.update(self._alg_params)
             alg = self._alg(**params)
@@ -214,8 +216,7 @@ class Sweep:
             if self._lower:
                 kw = [s.lower() for s in kw]
             one_result = ExtractionResult(
-                algorithm=self._alg_name, parameters=params.copy(), keywords=kw
+                algorithm=self._alg, parameters=params.copy(), keywords=kw
             )
             sweep_result.add_result(one_result)
         return sweep_result
-
