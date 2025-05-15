@@ -71,9 +71,18 @@ def stem(text):
 
 
 class Stopwords:
+    """
+    Creates a list of stopwords, words to ignore.
+
+    Attributes:
+        sw: A set of stopwords.
+        stemmer: Instance of a stemming algorithm.
+    
+    """
     ENCODING = "utf-8"
 
     def __init__(self, stemmer: PorterStemmer = None):
+        """Inits Stopwords class with a list of stopwords and a stemming algorithm."""
         self._sw = set()  # stopword list, initially empty
         self._stemmer = stemmer or NullStemmer()
 
@@ -114,7 +123,24 @@ class Stopwords:
 
 
 class Parameters:
+    """ Creates a set of parameters an NLP models.
+     
+    Attributes:
+        spec: List of named tuples that define the 
+                (specification, (parameter name, parameter type, description, and default value)
+                for each paramter required to run a keyword extraction algorithm.
+        values: A dictionary of the paramater names and their values.
+        check_types: A boolean indicating if types should be checked.
+
+    
+    """
+
     def __init__(self, spec: list[tuple], values: dict[str, Any], check_types=True):
+        """
+        Inits Parameters class with a list of specification definitions and a dictionary of 
+            defined specification and values.
+        
+        """
         self._spec = spec
         # set all values to defaults
         self._v = {x.name: x.default for x in spec}
@@ -156,6 +182,11 @@ class Algorithm(ABC):
       - call `super().__init__(**kwargs)` in their constructor
       - override the method `_get_keywords()` to return keywords for
         a given text
+
+
+    Attributes:
+        check_types: Whether to check parameter types
+        params: Parameter values
     """
 
     # constants for keyword_sort param
@@ -180,12 +211,7 @@ class Algorithm(ABC):
     ]
 
     def __init__(self, check_types: bool = True, **params):
-        """Base constructor.
-
-        Args:
-            check_types: Whether to check parameter types
-            params: Parameter values
-        """
+        """Inits a base constructor for Algorithm with choice to check types and parameter values"""
         self.params = Parameters(self.PARAM_SPEC, params, check_types=check_types)
         if self.params.stopwords is None:
             stemmer = CaseSensitiveStemmer() if self.params.stemming else NullStemmer()
@@ -376,6 +402,10 @@ class Algorithm(ABC):
 
 
 class KPMiner(Algorithm):
+    """
+    An instance of a KP Miner NLP Model.      
+    """
+
     PARAM_SPEC = Algorithm.PARAM_SPEC + [
         PS("lasf", int, "Last allowable seen frequency", 3),
         PS(
@@ -410,7 +440,7 @@ class KPMiner(Algorithm):
     ]
 
     def __init__(self, **kwargs):
-        """Constructor"""
+        """Inits KPMiner with an information to initialize super class Algorithm and model instance"""
         super().__init__(**kwargs)
         self._extractor = pke.unsupervised.KPMiner()
 
@@ -442,6 +472,10 @@ class KPMiner(Algorithm):
 
 
 class Rake(Algorithm):
+    """
+    An instance of a RAKE NLP Model.      
+    """
+     
     PARAM_SPEC = Algorithm.PARAM_SPEC + [
         PS("min_len", int, "Minimum ngram size", 1),
         PS("max_len", int, "Maximum ngram size", 3),
@@ -474,7 +508,7 @@ class Rake(Algorithm):
     ]
 
     def __init__(self, **kwargs):
-        """Constructor"""
+        """Inits RAKW with an information to initialize super class Algorithm and model instance"""
         super().__init__(**kwargs)
         self._extractor = _Rake(
             stopwords=self.params.stopwords.stopwords,
@@ -503,6 +537,10 @@ class Rake(Algorithm):
 
 
 class Yake(Algorithm):
+    """
+    An instance of a YAKE NLP Model.      
+    """
+        
     PARAM_SPEC = Algorithm.PARAM_SPEC + [
         PS("ws", int, "YAKE window size", 2),
         PS("dedup", float, "Deduplication limit for YAKE", 0.9),
@@ -511,7 +549,7 @@ class Yake(Algorithm):
     ]
 
     def __init__(self, **kwargs):
-        """Constructor"""
+        """Inits YAKE with an information to initialize super class Algorithm and model instance"""
         super().__init__(**kwargs)
 
         # Initialize Yake
