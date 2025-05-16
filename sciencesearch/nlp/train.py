@@ -1,5 +1,5 @@
 """
-Training pipeline and super-simple search example
+Training pipeline
 """
 from collections import defaultdict
 from glob import glob
