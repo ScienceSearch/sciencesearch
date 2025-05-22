@@ -23,12 +23,33 @@ logging.root.setLevel(logging.ERROR)  # quiet pke warnings
 class Searcher:
     """Dead simple search that can be created from a config file and some input files."""
 
-    def __init__(self, file_keywords=None):
+
+    # def __init__(self, file_keywords=None):
+    #     """Constructor."""
+    #     self._db = defaultdict(set)
+    #     self._fkw = {}
+    #     self._pred_kws = {}
+    #     self._training_kws = {}
+
+    #     if file_keywords:
+    #         self.add_entries(file_keywords)
+    
+    def __init__(self, predicted_keywords: dict[str, list[str]] = None, 
+                 training_keywords:dict[str, list[str]] = None,  
+                 file_keywords: dict[str, list[str]] = None):
         """Constructor."""
         self._db = defaultdict(set)
-        self._fkw = {}
+        self._fkw = {}      
+        self._pred_kws = predicted_keywords or {}
+        self._training_kws = training_keywords or {}
+
+        if predicted_keywords:
+            self.add_entries(predicted_keywords)
+        if training_keywords:
+            self.add_entries(training_keywords)
         if file_keywords:
             self.add_entries(file_keywords)
+
 
     def add_entries(self, file_keywords: dict[str, list[str]]):
         """Add a map of files to a list of keywords."""
@@ -42,6 +63,17 @@ class Searcher:
         """ "Get the current mapping of files to the list of keywords associated with each."""
         return self._fkw.copy()
 
+    @property
+    def predicted_keywords(self) -> dict[str, list[str]]:
+        """ "Get the current mapping of files to the list of keywords associated with each."""
+        return self._pred_kws.copy()
+
+    @property
+    def training_keywords(self) -> dict[str, list[str]]:
+        """ "Get the current mapping of files to the list of keywords associated with each."""
+        return self._training_kws.copy()
+
+
     @classmethod
     def from_config(cls, config_file) -> "Searcher":
         conf = json.load(open(config_file))
@@ -49,6 +81,8 @@ class Searcher:
         file_dir = Path(training["directory"])
         save_file = file_dir / training["save_file"]
         use_saved_results = False
+        file_keywords = {}
+
         if save_file.exists():
             # TODO: check that it's newer than conf/input files
             use_saved_results = True
@@ -74,7 +108,6 @@ class Searcher:
                         swp.set_param_discrete(param_name, param_val["values"])
                 hyper.add_sweep(swp)
             # load training data
-            file_keywords = {}
             for kwd_file in training["keywords"]:
                 with open(file_dir / kwd_file) as f:
                     rdr = csv.reader(f)
@@ -98,7 +131,7 @@ class Searcher:
                 kw = run_hyper(hyper_results, file_dir / fname)
                 search_kw[fname] = kw
         # initialize this class with results
-        return cls(search_kw)
+        return cls(predicted_keywords = search_kw, training_keywords = file_keywords)
 
     def find(self, *keywords):
         files = set()
@@ -106,3 +139,4 @@ class Searcher:
             for fname in self._db[k]:
                 files.add(fname)
         return files
+    
