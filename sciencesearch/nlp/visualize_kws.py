@@ -1,4 +1,5 @@
 
+from pathlib import Path
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import word_tokenize
 from sciencesearch.nlp.models import CaseSensitiveStemmer
@@ -21,8 +22,6 @@ class KWS_Visualizer(ABC):
             try:
                 with open(txt_filepath, 'r') as file:
                     file_content = file.read()
-                    print(type(file_content))
-                    print(file_content)
                     self.text = file_content
             except FileNotFoundError:
                 print(f"Error: File not found at '{txt_filepath}'")
@@ -98,7 +97,6 @@ class MultiSet_Visualizer(KWS_Visualizer):
         self.stemmed_kw_sets = {}
         max_length = 1
 
-        max_length = 1
         for set_name, keywords in keywords_dict.items():
             self.stemmed_kw_sets[set_name] = set()
             for phrase in keywords:
@@ -123,32 +121,6 @@ class MultiSet_Visualizer(KWS_Visualizer):
             styled_str = f'<span class="{class_name}">{" ".join(tokens)}</span> '
             return True, styled_str
         return False, ""
-    
-        
-    # def style_text(self, tokens, ngram: tuple):
-    #     css = ""
-    #     if ngram in self.stemmed_kw_set_dict.get('manual'):
-    #         css = "color:#B99512;"
-    #     if ngram in self.stemmed_kw_set_dict.get('tuned'):
-    #         css ="color:#2F539B;"
-    #     if ngram in self.stemmed_kw_set_dict.get('default'):
-    #         css = "color:#B83C08;"
-    #     if ngram in self.stemmed_kw_set_dict.get('manual') and ngram in self.stemmed_kw_set_dict.get('default') and ngram not in self.stemmed_kw_set_dict.get('tuned'):
-    #         css = 'color:#FF7722;'
-    #     if ngram in self.stemmed_kw_set_dict.get('tuned') and ngram in self.stemmed_kw_set_dict.get('default') and ngram not in self.stemmed_kw_set_dict.get('manual'):
-    #         css = 'color:#7D0552;'
-    #     if ngram in self.stemmed_kw_set_dict.get('manual') and ngram in self.stemmed_kw_set_dict.get('tuned') and ngram not in self.stemmed_kw_set_dict.get('default'):
-    #         css = 'color:#1AA260;'
-    #     if ngram in self.stemmed_kw_set_dict.get('manual') and ngram in self.stemmed_kw_set_dict.get('tuned') and ngram in self.stemmed_kw_set_dict.get('default'):
-    #         css = 'color:#000000;'
-        
-    #     if style_str:
-    #         style_str+="font-weight:bold"
-    #         styled_str += f"<span style = '{css}'>{' '.join(tokens[i:i + n])}</span> "
-    #         return True, styled_str
-    #     else:
-    #         return False, ""
-        
 
 
 class HTMLBuilder:
@@ -175,34 +147,19 @@ class HTMLBuilder:
         webbrowser.open_new_tab(fp) 
 
     def generate_html(self, title: str = "" ,body_content: str = ""):
-        # css = """
-        # .highlight { background-color: yellow; font-weight: bold; }
-        
-        # /* For multi-set visualizer */
-        # .kw-manual { color: #B99512; font-weight: bold; }
-        # .kw-default { color: #B83C08; font-weight: bold; }
-        # .kw-tuned { color: #2F539B; font-weight: bold; }
-        
-        # /* Combined classes */
-        # .kw-manual.kw-default:not(.kw-tuned) { color: #FF7722; font-weight: bold; }
-        # .kw-manual.kw-tuned:not(.kw-default) { color: #006A4E; font-weight: bold; }
-        # .kw-default.kw-tuned:not(.kw-manual) { color: #7D0552; font-weight: bold; }
-        # .kw-manual.kw-default.kw-tuned { color: #000000; font-weight: bold; }
-        # """
-
 
         legend = ""
         if isinstance(self.visualizer, MultiSet_Visualizer):
             legend = """
             <div class="legend">
                 <h2>Legend</h2>
-                <p><span class="kw-manual">Only in manual keywords set</span></p>
+                <p><span class="kw-training">Only in training keywords set</span></p>
                 <p><span class="kw-default">Only in default keywords set</span></p>
                 <p><span class="kw-tuned">Only in tuned keyword set</span></p>
-                <p><span class="kw-manual kw-default">In both manual and default keyword sets</span></p>
-                <p><span class="kw-manual kw-tuned">In both manual and tuned keyword sets</span></p>
+                <p><span class="kw-training kw-default">In both training and default keyword sets</span></p>
+                <p><span class="kw-training kw-tuned">In both training and tuned keyword sets</span></p>
                 <p><span class="kw-default kw-tuned">In both default and tuned keyword sets</span></p>
-                <p><span class="kw-manual kw-default kw-tuned">In all three keyword sets</span></p>
+                <p><span class="kw-training kw-default kw-tuned">In all three keyword sets</span></p>
             </div>
             """
 
@@ -226,8 +183,7 @@ class HTMLBuilder:
         """
         return html
     
-
-class Results:
+class JsonView:
     def __init__(self, searcher: Searcher):
         self.searcher = searcher
         self._predicted_keywords = searcher.predicted_keywords.copy()
@@ -237,45 +193,55 @@ class Results:
 
     def save_predicted_keywords(self, filename: str):
         res = self._predicted_keywords.copy()
-        res['type'] = 'predicted'
 
         with open(filename, 'w') as file:
-            json.dump(self._predicted_keywords, file, indent=4)
+            json.dump(res, file, indent=4)
 
     def save_file_keywords(self, filename: str):
         res = self._training_keywords.copy()
-        res['type'] = 'file'
 
 
         with open(filename, 'w') as file:
-            json.dump(self._file_keywords, file, indent=4)
+            json.dump(res, file, indent=4)
 
 
     def save_training_keywords(self, filename: str):
         res = self._training_keywords.copy()
-        res['type'] = 'training'
 
         with open(filename, 'w') as file:
-            json.dump(self._training_keywords, file, indent=4)
+            json.dump(res, file, indent=4)
 
 
     def save_all_keyword_sets(self,  filename: str):
         
-        res = {'type': 'multi'}
-        for filename, keywords in self._file_keywords.items():
-            all_kws = {'training':self._training_keywords.get(filename, []),
-                        'tuned': self._predicted_keywords.get(filename, [])}
-            res[filename] = all_kws
-    
+        res = {}
+        for fn, keywords in self._file_keywords.items():
+            all_kws = {'training':self._training_keywords.get(fn, []),
+                        'tuned': self._predicted_keywords.get(fn, [])}
+            res[fn] = all_kws    
         with open(filename, 'w') as file:
-            json.dumps(res)
             file.write(json.dumps(res))
 
-    def visualize(visualizer: KWS_Visualizer, json: json):
-        if isinstance(visualizer, SingleSet_Visualizer):
-            pass
-        if isinstance(visualizer, MultiSet_Visualizer):
-            pass
+    def visualize_from_config(config_file, is_singleset: bool, json_file: json, save_file_prefix: str):
+        conf = json.load(open(config_file))
+        training = conf["training"]
+        file_dir = Path(training["directory"])
 
-            
-
+        with open(json_file) as json_data:
+            data = json.load(json_data)        
+        if is_singleset:
+            for textfilename, keywords in data.items():
+                filepath = f"{file_dir}/{textfilename}"
+                file = textfilename[:textfilename.find('.')]
+                sskw = SingleSet_Visualizer(keywords=keywords, txt_filepath = filepath)
+                htmlbuilder = HTMLBuilder(visualizer=sskw, filename=f"{save_file_prefix}_{file}", title=textfilename)
+                htmlbuilder.get_highlighted_html()
+                htmlbuilder.write_file_and_run()
+        else:
+            for textfilename, keywords in data.items():
+                filepath = f"{file_dir}/{textfilename}"
+                file = textfilename[:textfilename.find('.')]
+                mskw = MultiSet_Visualizer(keywords_dict=keywords, txt_filepath = filepath)
+                htmlbuilder = HTMLBuilder(visualizer=mskw, filename=f"{save_file_prefix}_{file}", title=textfilename)
+                htmlbuilder.get_highlighted_html()
+                htmlbuilder.write_file_and_run()
