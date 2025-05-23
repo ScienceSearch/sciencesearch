@@ -5,7 +5,7 @@ from sciencesearch.nlp.models import CaseSensitiveStemmer
 from abc import ABC, abstractmethod
 from sciencesearch.nlp.search import Searcher
 import json
-
+from collections import defaultdict
 import webbrowser 
 import os 
 
@@ -227,15 +227,55 @@ class HTMLBuilder:
         return html
     
 
-class ResultsJson:
-    def __init__(self):
-        pass
-    def save_results(self,searcher: Searcher, filename: str):
-        keyword_mapping = searcher.file_keywords
-        print("km", keyword_mapping)
-        with open(filename, 'w') as file:
-            json.dump(keyword_mapping, file, indent=4)
+class Results:
+    def __init__(self, searcher: Searcher):
+        self.searcher = searcher
+        self._predicted_keywords = searcher.predicted_keywords.copy()
+        self._file_keywords = searcher.file_keywords.copy()
+        self._training_keywords = searcher.training_keywords.copy()
 
+
+    def save_predicted_keywords(self, filename: str):
+        res = self._predicted_keywords.copy()
+        res['type'] = 'predicted'
+
+        with open(filename, 'w') as file:
+            json.dump(self._predicted_keywords, file, indent=4)
+
+    def save_file_keywords(self, filename: str):
+        res = self._training_keywords.copy()
+        res['type'] = 'file'
+
+
+        with open(filename, 'w') as file:
+            json.dump(self._file_keywords, file, indent=4)
+
+
+    def save_training_keywords(self, filename: str):
+        res = self._training_keywords.copy()
+        res['type'] = 'training'
+
+        with open(filename, 'w') as file:
+            json.dump(self._training_keywords, file, indent=4)
+
+
+    def save_all_keyword_sets(self,  filename: str):
+        
+        res = {'type': 'multi'}
+        for filename, keywords in self._file_keywords.items():
+            all_kws = {'training':self._training_keywords.get(filename, []),
+                        'tuned': self._predicted_keywords.get(filename, [])}
+            res[filename] = all_kws
+    
+        with open(filename, 'w') as file:
+            json.dumps(res)
+            file.write(json.dumps(res))
+
+    def visualize(visualizer: KWS_Visualizer, json: json):
+        if isinstance(visualizer, SingleSet_Visualizer):
+            pass
+        if isinstance(visualizer, MultiSet_Visualizer):
+            pass
 
             
 

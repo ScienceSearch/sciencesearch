@@ -38,6 +38,7 @@ class Searcher:
                  training_keywords:dict[str, list[str]] = None,  
                  file_keywords: dict[str, list[str]] = None):
         """Constructor."""
+        self.conf = None
         self._db = defaultdict(set)
         self._fkw = {}      
         self._pred_kws = predicted_keywords or {}
