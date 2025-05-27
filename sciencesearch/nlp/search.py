@@ -12,7 +12,6 @@ import logging
 from pathlib import Path
 
 # package
-from .models import Ensemble
 from .sweep import Sweep
 from .hyper import Hyper
 from .train import load_hyper, run_hyper, train_hyper
@@ -83,7 +82,14 @@ class Searcher:
         save_file = file_dir / training["save_file"]
         use_saved_results = False
         file_keywords = {}
-
+        for kwd_file in training["keywords"]:
+                with open(file_dir / kwd_file) as f:
+                    rdr = csv.reader(f)
+                    for row in rdr:
+                        filename, kw_str = row
+                        keywords = [k.strip() for k in kw_str.split(",")]
+                        file_keywords[filename] = keywords
+        search_kw = {}
         if save_file.exists():
             # TODO: check that it's newer than conf/input files
             use_saved_results = True
@@ -109,13 +115,6 @@ class Searcher:
                         swp.set_param_discrete(param_name, param_val["values"])
                 hyper.add_sweep(swp)
             # load training data
-            for kwd_file in training["keywords"]:
-                with open(file_dir / kwd_file) as f:
-                    rdr = csv.reader(f)
-                    for row in rdr:
-                        filename, kw_str = row
-                        keywords = [k.strip() for k in kw_str.split(",")]
-                        file_keywords[filename] = keywords
             hyper_results = train_hyper(
                 hyper,
                 file_keywords,
@@ -126,7 +125,6 @@ class Searcher:
         else:
             hyper_results = load_hyper(save_file)
         # run 'best' algorithm on input files
-        search_kw = {}
         for input_file_pat in training["input_files"]:
             for fname in glob(input_file_pat, root_dir=file_dir):
                 kw = run_hyper(hyper_results, file_dir / fname)

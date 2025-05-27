@@ -1,14 +1,12 @@
 
-from pathlib import Path
-from nltk.tokenize import word_tokenize
-from nltk.tokenize import word_tokenize
-from sciencesearch.nlp.models import CaseSensitiveStemmer
-from abc import ABC, abstractmethod
-from sciencesearch.nlp.search import Searcher
 import json
-from collections import defaultdict
+from pathlib import Path
+from abc import ABC, abstractmethod
 import webbrowser 
 import os 
+from nltk.tokenize import word_tokenize
+from sciencesearch.nlp.models import CaseSensitiveStemmer
+from sciencesearch.nlp.search import Searcher
 
 
 class KWS_Visualizer(ABC):
