@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 from abc import ABC, abstractmethod
-from typing_extensions import override
 import webbrowser
 import os
 from nltk.tokenize import word_tokenize
@@ -25,67 +24,92 @@ Typical usage example:
 class KeywordsVisualizer(ABC):
     """Abstract base class for keyword visualization.
 
-    A KeywordVisualizer creates text, with snippets highlighted based on defined keywords. 
+    A KeywordVisualizer creates HTML text with snippets highlighted based on defined keywords.
+    This class handles the common functionality of tokenizing text, stemming words, and
+    generating HTML output with highlighted keywords.
 
-    Sublasses should:
-      - define their own styling of keywords
-      - call `super().__init__(text_filepath: str for filepath to text file, text: str)` in their constructor
-        where depending on the source, one should be None
-      - override the method `style_text()` to return styled keyword html
-      - override the method `get_legend()` to return the legend for the type of visualizer
+    Subclasses should:
+        - Call super().__init__() in their constructor with appropriate parameters
+        - Override the method style_text() to define their own styling of keywords
+        - Override the method get_legend() to return appropriate legend HTML
 
-      Attributes:
-        html_content: styled html block of highlighted keywords
+    Attributes:
+        text (str): The input text to be highlighted.
+        title (str): Title for the visualization.
+        html_content (str): Generated HTML content with highlighted keywords (read-only).
     """
 
     def __init__(self, txt_filepath: str = None, text: str = None, title: str = None):
-        """Base constructer.
+        """Initializes the KeywordsVisualizer.
 
         Args:
-            text_filepath: filepath to text file path with original text input to be highlighted
-            text: string of text to be highlighted
+            txt_filepath (str, optional): Path to text file containing input text.
+                If provided, text will be read from this file.
+            text (str, optional): Input text string to be highlighted.
+                Used if txt_filepath is not provided.
+            title (str, optional): Title header for the visualization output.
+
+        Note:
+            Either txt_filepath or text should be provided, but not both.
+            If txt_filepath is provided, it takes precedence over text parameter.
         """
-        self.caseSS = CaseSensitiveStemmer()
+        # public
         self.text = text
         self.title = title
 
+        # private
+        self._case_sensitive_stemmer = CaseSensitiveStemmer()
+        self._tokens = []
+        self._stemmed_tokens_text = []
+        self._html_content = None
+
+        self._load_text_from_file(txt_filepath)
+        self._tokenize_text()
+        self._get_formatted_html_body()
+
+    @property
+    def html_content(self):
+        """str: HTML block styled with appropriately highlighted keywords (read-only)."""
+        return self._html_content
+
+    def _load_text_from_file(self, txt_filepath: str):
         if txt_filepath:
             try:
-                with open(txt_filepath, "r") as file:
-                    file_content = file.read()
-                    self.text = file_content
+                with open(txt_filepath, "r", encoding="utf-8") as file:
+                    self.text = file.read()
             except FileNotFoundError:
                 print(f"Error: File not found at '{txt_filepath}'")
             except Exception as e:
                 print(f"An error occurred: {e}")
-        if self.text:  # Only tokenize if we have text
-            self.tokens = word_tokenize(self.text)
-            self.stemmed_tokens_text = [self.caseSS.stem(token) for token in self.tokens]
-        else:
-            self.tokens = []
-            self.stemmed_tokens_text = []
-            
-        self.get_formatted_html_body()
 
-    @property
-    def html_content(self):
-        """HTML block styled with appropriately highlighted keywords"""
-        return self._html_content
+    def _tokenize_text(self):
+        if self.text:
+            self._tokens = word_tokenize(self.text)
+            self._stemmed_tokens_text = [
+                self._case_sensitive_stemmer.stem(token) for token in self._tokens
+            ]
+
+    def _get_formatted_html_body(self, body_content: str = ""):
+        legend = self.get_legend()
+        body_content = self._highlight_tokens_html()
+
+        self._html_content = f"""<h1>Experiment: {self.title}</h1>
+            {legend}
+            {body_content}"""
 
     def _highlight_tokens_html(self):
         html_content = "<div class='highlighted-text'>"
         i = 0
-        while i < len(self.tokens):
+        while i < len(self._tokens):
             matched = False
-            for n in range(min(self.max_kw_length, len(self.tokens) - i), 0, -1):
-                if i + n <= len(self.tokens):
+            for n in range(min(self._max_kw_length, len(self._tokens) - i), 0, -1):
+                if i + n <= len(self._tokens):
                     ngram_text = [
-                        word.lower()
-                        for word in self.stemmed_tokens_text[i : i + n]
+                        word.lower() for word in self._stemmed_tokens_text[i : i + n]
                     ]
                     ngram = tuple(ngram_text)
                     is_matched, styled_str = self.style_text(
-                        self.tokens[i : i + n], ngram
+                        self._tokens[i : i + n], ngram
                     )
                     if is_matched:
                         html_content += styled_str
@@ -93,32 +117,43 @@ class KeywordsVisualizer(ABC):
                         matched = True
                         break
             if not matched:
-                html_content += f"{self.tokens[i]} "
+                html_content += f"{self._tokens[i]} "
                 i += 1
         html_content += "</div>"
         return html_content
 
     @abstractmethod
     def style_text(self, tokens, ngram):
-        """Adds CSS styling to keywords in the text"""
+        """Adds CSS styling to keywords in the text.
+
+        Args:
+            tokens (list[str]): Original tokens that matched a keyword.
+            ngram (tuple[str]): Stemmed and lowercased version of the tokens.
+
+        Returns:
+            tuple[bool, str]: A tuple containing:
+                - bool: True if the ngram matches a keyword, False otherwise.
+                - str: HTML string with styled text if matched, empty string otherwise.
+        """
         pass
 
     @abstractmethod
     def get_legend(self):
-        """Creates a legend for the meaning of highighted text for the visualizer"""
+        """Creates a legend explaining the meaning of highlighted text.
+
+        Returns:
+            str: HTML string containing the legend for the visualizer.
+        """
         pass
-
-    def get_formatted_html_body(self, body_content: str = ""):
-        legend = self.get_legend()
-        body_content = self._highlight_tokens_html()
-
-        self._html_content =  f"""<h1>Experiment: {self.title}</h1>
-            {legend}
-            {body_content}"""
 
 
 class SingleSetVisualizer(KeywordsVisualizer):
-    """Subclass of KeywordVisualizer that handles a single set of keywords for a text passage."""
+    """Subclass of KeywordVisualizer for highlighting a single set of keywords.
+
+    Attributes:
+        keywords (list[str]): List of keyword phrases to highlight.
+        style_class_name (str): CSS class name to apply to highlighted keywords.
+    """
 
     def __init__(
         self,
@@ -128,42 +163,44 @@ class SingleSetVisualizer(KeywordsVisualizer):
         text: str = None,
         title: str = None,
     ):
-        """ Base constructer.
+        """Initializes SingleSetVisualizer.
 
         Args:
-            keywords: a list of strings to be highlighted in the passage
-            style_class_name: the class within the css styling that should be applied to highlighted keywords
-            text_filepath: filepath to text file path with original text input to be highlighted
-            text: string of text to be highlighted
+            keywords (list[str]): List of keyword phrases to be highlighted in the text.
+            style_class_name (str, optional): CSS class name for styling highlighted keywords.
+                Defaults to "keyword".
+            txt_filepath (str, optional): Path to text file containing input text.
+            text (str, optional): Input text string to be highlighted.
+            title (str, optional): Title for the visualization output.
         """
-        self.keywords = keywords
+        self.keywords = keywords.copy()
         self.class_name = style_class_name
-        self.stemmed_kw_set = set()
-        
-        # Initialize the stemmer here since we need it before calling super().__init__
+        self._stemmed_kw_set = set()
+
+        self._process_keywords()
+
+        super().__init__(text=text, txt_filepath=txt_filepath, title=title)
+
+    def _process_keywords(self):
         temp_stemmer = CaseSensitiveStemmer()
-        
-        for phrase in keywords:
+
+        for phrase in self.keywords:
             tokenized_phrase = word_tokenize(phrase.lower())
             stemmed_phrase = tuple(temp_stemmer.stem(word) for word in tokenized_phrase)
-            self.stemmed_kw_set.add(stemmed_phrase)
+            self._stemmed_kw_set.add(stemmed_phrase)
 
-        self.max_kw_length = max(
-                [len(word_tokenize(phrase)) for phrase in keywords], default=1
-            )  
-        super().__init__(text=text, txt_filepath=txt_filepath, title=title)
-       
-  
-    @override
+        self._max_kw_length = max(
+            [len(word_tokenize(phrase)) for phrase in self.keywords], default=1
+        )
+
     def style_text(self, tokens, ngram):
         """See base class."""
-        if ngram in self.stemmed_kw_set:
+        if ngram in self._stemmed_kw_set:
             styled_str = f"<span class='{self.class_name}'>{' '.join(tokens)}</span> "
             return True, styled_str
         else:
             return False, ""
 
-    @override
     def get_legend(self):
         """See base class."""
         return """
@@ -175,49 +212,56 @@ class SingleSetVisualizer(KeywordsVisualizer):
 
 
 class MultiSetVisualizer(KeywordsVisualizer):
-    """Subclass of KeywordVisualizer that handles a multiple set of keywords for a text passage."""
+    """Subclass of KeywordVisualizer for highlighting multiple sets of keywords with different styles.
+
+    Attributes:
+        keywords_dict (dict[str, list[str]]): Dictionary mapping set names to keyword lists.
+    """
 
     def __init__(
-        self, keywords_dict: dict[str, list[str]], text: str = None, txt_filepath=None, title: str = None,
-
+        self,
+        keywords_dict: dict[str, list[str]],
+        text: str = None,
+        txt_filepath=None,
+        title: str = None,
     ):
-        
-        """ Base constructer.
+        """Initializes the MultiSetVisualizer.
 
         Args:
-            keywords: a dictionary with a type of keyword key associated with list of strings to be highlighted in the passage
-            text_filepath: filepath to text file path with original text input to be highlighted
-            text: string of text to be highlighted
+            keywords_dict (dict[str, list[str]]): Dictionary where keys are set names
+                and values are lists of keyword phrases for that set.
+            txt_filepath (str, optional): Path to text file containing input text.
+            text (str, optional): Input text string to be highlighted.
+            title (str, optional): Title for the visualization output.
         """
-
-        self.keywords_dict = keywords_dict
-
+        self.keywords_dict = {k: v.copy() for k, v in keywords_dict.items()}
         # Process each set of keywords
-        self.stemmed_kw_sets = {}
-        max_length = 1
-        
-        # Initialize the stemmer here since we need it before calling super().__init__
+        self._stemmed_kw_sets = {}
+        self._process_keyword_sets()
+
+        super().__init__(text=text, txt_filepath=txt_filepath, title=title)
+
+    def _process_keyword_sets(self):
         temp_stemmer = CaseSensitiveStemmer()
-        for set_name, keywords in keywords_dict.items():
-            self.stemmed_kw_sets[set_name] = set()
+        max_length = 1
+
+        for set_name, keywords in self.keywords_dict.items():
+            self._stemmed_kw_sets[set_name] = set()
             for phrase in keywords:
                 phrase_tokens = word_tokenize(phrase.lower())
                 stemmed_phrase = tuple(
                     temp_stemmer.stem(token) for token in phrase_tokens
                 )
-                self.stemmed_kw_sets[set_name].add(stemmed_phrase)
+                self._stemmed_kw_sets[set_name].add(stemmed_phrase)
                 max_length = max(max_length, len(phrase_tokens))
-        
 
-        self.max_kw_length = max_length
-        super().__init__(text=text, txt_filepath=txt_filepath, title=title)
-
+        self._max_kw_length = max_length
 
     def style_text(self, tokens, ngram):
         """See base class."""
         # Determine which sets this n-gram belongs to
         matching_sets = []
-        for set_name, stemmed_set in self.stemmed_kw_sets.items():
+        for set_name, stemmed_set in self._stemmed_kw_sets.items():
             if ngram in stemmed_set:
                 matching_sets.append(set_name)
 
@@ -241,44 +285,63 @@ class MultiSetVisualizer(KeywordsVisualizer):
 
 
 class HTMLBuilder:
-    """Can build and execute html"""
+    """Builds complete HTML documents with keyword visualizations.
+
+    This class takes one or more KeywordsVisualizer objects and generates a complete
+    HTML document with proper structure, CSS styling, and the ability to open the
+    result in a web browser.
+
+    Attributes:
+        visualizers (list[KeywordsVisualizer]): List of visualizer objects to include.
+        filename (str): Output filename for the HTML document.
+        title (str): Title for the HTML document.
+        css_styles_filepath (str): Path to CSS stylesheet file.
+    """
 
     def __init__(
         self,
         visualizers: list[KeywordsVisualizer],
         filename: str,
         title: str,
-        css_styles_filepath: str = 'shared/keyword_vis.css'
+        css_styles_filepath: str = "shared/keyword_vis.css",
     ):
-        """"Base constructer. 
+        """Initializes HTMLBuilder. HTML generation occurs automatically during initialization.
 
         Args:
-            visualizer: A KeywordsVisualizer object to compile and run HTML off
-            filename: the filename to the HTML to
-            title: the title of the HTML
-            css_styles_filepath: optional filepath as string to style text. Must follow default format.
+            visualizers (list[KeywordsVisualizer]): List of KeywordsVisualizer objects
+                whose content will be included in the HTML document.
+            filename (str): Name of the output HTML file.
+            title (str): Title for the HTML document (appears in browser tab and page).
+            css_styles_filepath (str, optional): Relative path to CSS stylesheet.
+                Defaults to 'shared/keyword_vis.css'.
         """
-        self.visualizers = visualizers
+        self.visualizers = visualizers.copy()
         self.filename = filename
         self.title = title
         self.css_styles_filepath = css_styles_filepath
-        self.__generate_html()
 
-        
-    def __get_highlighted_html(self):
+        self.html = ""
+        self._generate_html()
+
+    def _get_highlighted_html(self):
         html_body = ""
         for visualizer in self.visualizers:
             html_body += visualizer.html_content
         return html_body
 
     def write_file_and_run(self):
+        """Writes HTML to file and opens it in the default web browser.
+
+        The method creates the HTML file and automatically opens it in a new browser tab
+        using the system's default web browser.
+        """
         with open(self.filename, "w") as file:
             file.write(self.html)
         fp = "file:///" + os.getcwd() + "/" + self.filename
         webbrowser.open_new_tab(fp)
 
-    def __generate_html(self):
-        body_content = self.__get_highlighted_html()
+    def _generate_html(self):
+        body_content = self._get_highlighted_html()
         html = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -297,40 +360,115 @@ class HTMLBuilder:
         """
         self.html = html
 
+
 class JsonView:
-    """"""
+    """Utility class for saving and visualizing keyword data from Searcher objects.
+
+    This class provides methods to extract keyword data from Searcher objects,
+    save it in JSON format, and create visualizations from saved JSON data.
+    It handles three types of keyword sets: predicted, file-based, and training keywords.
+
+    Attributes:
+        searcher (Searcher): The searcher object containing keyword data.
+    """
+
     def __init__(self, searcher: Searcher):
-        """
+        """Initializes JsonView with a Searcher object.
+
+        Args:
+            searcher (Searcher): Searcher object containing keyword data to be exported.
         """
         self.searcher = searcher
         self.__predicted_keywords = searcher.predicted_keywords.copy()
         self.__file_keywords = searcher.file_keywords.copy()
         self.__training_keywords = searcher.training_keywords.copy()
 
+    @property
+    def predicted_keywords(self):
+        """Saves predicted keywords to a JSON file.
+
+        Args:
+            filename (str): Path to the output JSON file.
+        """
+        JsonView._print_keywords(self.__predicted_keywords)
+        return self.__predicted_keywords.copy()
+
+    @property
+    def file_keywords(self):
+        """Saves file keywords to a JSON file.
+
+        Args:
+            filename (str): Path to the output JSON file.
+        """
+        JsonView._print_keywords(self.__file_keywords)
+        return self.__file_keywords.copy()
+
+    @property
+    def training_keywords(self):
+        """Prints training keywords
+        dict: A dictionary of input file names and their training keywords
+        """
+
+        JsonView._print_keywords(self.__training_keywords)
+        return self.__training_keywords.copy()
+
+    @staticmethod
+    def _print_keywords(keywords: dict):
+        for f, k in keywords.items():
+            print(f"{f} => {', '.join(k)}")
+
     def save_predicted_keywords(self, filename: str):
-        """ """
+        """Saves predicted keywords to a JSON file.
+
+        Args:
+            filename (str): Path to the output JSON file.
+        """
         res = self.__predicted_keywords.copy()
 
         with open(filename, "w") as file:
             json.dump(res, file, indent=4)
 
     def save_file_keywords(self, filename: str):
-        """ """
+        """Saves file keywords to a JSON file.
+
+        Args:
+            filename (str): Path to the output JSON file.
+        """
         res = self.__training_keywords.copy()
 
         with open(filename, "w") as file:
             json.dump(res, file, indent=4)
 
     def save_training_keywords(self, filename: str):
-        """ """
+        """Saves training keywords to a JSON file.
+
+        Args:
+            filename (str): Path to the output JSON file.
+        """
         res = self.__file_keywords.copy()
 
         with open(filename, "w") as file:
             json.dump(res, file, indent=4)
 
     def save_all_keyword_sets(self, filename: str):
-        """ """
+        """Saves all keyword sets in a combined JSON structure.
 
+        Creates a JSON file where each filename maps to a dictionary containing
+        both training and tuned (predicted) keyword sets.
+
+        Args:
+            filename (str): Path to the output JSON file.
+
+        Note:
+            The output structure is:
+            {
+                "filename1.txt": {
+                    "training": ["keyword1", "keyword2", ...],
+                    "tuned": ["keyword3", "keyword4", ...]
+                },
+                ...
+            }
+        """
         res = {}
         for fn, keywords in self.__file_keywords.items():
             all_kws = {
@@ -342,11 +480,21 @@ class JsonView:
             file.write(json.dumps(res))
 
     @staticmethod
-    def visualize_from_config(
-        config_file, json_file: json, save_filename: str
-    ):
-        """
-        
+    def visualize_from_config(config_file, json_file: str, save_filename: str):
+        """Creates HTML visualizations from configuration and JSON keyword files.
+
+        This static method reads a configuration file to determine text file locations
+        and a JSON file containing keyword data, then generates HTML visualizations
+        for each text file with its associated keywords.
+
+        Args:
+            config_file (str): Path to JSON configuration file containing training directory.
+                Expected structure: {"training": {"directory": "path/to/texts"}}
+            json_file (str): Path to JSON file containing keyword data.
+                Can contain either single keyword lists or multi-set keyword dictionaries.
+            save_file_prefix (str): Prefix for generated HTML filenames.
+
+        Generated HTML files are automatically opened in the default web browser.
         """
         conf = json.load(open(config_file))
         training = conf["training"]
@@ -361,36 +509,17 @@ class JsonView:
             file = textfilename[: textfilename.find(".")]
             visualizer = None
             if isinstance(keywords, list):
-                    visualizer = SingleSetVisualizer(keywords=keywords, txt_filepath=filepath, title = file)
-            if isinstance(keywords, dict):
-                    visualizer = MultiSetVisualizer(keywords_dict=keywords, txt_filepath=filepath, title = file)
+                visualizer = SingleSetVisualizer(
+                    keywords=keywords, txt_filepath=filepath, title=file
+                )
+            elif isinstance(keywords, dict):
+                visualizer = MultiSetVisualizer(
+                    keywords_dict=keywords, txt_filepath=filepath, title=file
+                )
             visualizers.append(visualizer)
-        htmlbuilder = HTMLBuilder(visualizers=visualizers, filename=f"{save_filename}",
-                title='Highlighted Keywords')
+        htmlbuilder = HTMLBuilder(
+            visualizers=visualizers,
+            filename=f"{save_filename}",
+            title="Highlighted Keywords",
+        )
         htmlbuilder.write_file_and_run()
-
-
-        # if is_singleset:
-        #     for textfilename, keywords in data.items():
-        #         filepath = f"{file_dir}/{textfilename}"
-        #         file = textfilename[: textfilename.find(".")]
-        #         sskw = SingleSetVisualizer(keywords=keywords, txt_filepath=filepath)
-        #         htmlbuilder = HTMLBuilder(
-        #             visualizer=sskw,
-        #             filename=f"{save_file_prefix}_{file}",
-        #             title=textfilename,
-        #         )
-        #         htmlbuilder.get_highlighted_html()
-        #         htmlbuilder.write_file_and_run()
-        # else:
-        #     for textfilename, keywords in data.items():
-        #         filepath = f"{file_dir}/{textfilename}"
-        #         file = textfilename[: textfilename.find(".")]
-        #         mskw = MultiSetVisualizer(keywords_dict=keywords, txt_filepath=filepath)
-        #         htmlbuilder = HTMLBuilder(
-        #             visualizer=mskw,
-        #             filename=f"{save_file_prefix}_{file}",
-        #             title=textfilename,
-        #         )
-        #         htmlbuilder.get_highlighted_html()
-        #         htmlbuilder.write_file_and_run()
