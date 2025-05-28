@@ -64,7 +64,7 @@ def clean_text(text: str = None, filepath: str = None):
     # 4. Remove numbers
     # =============================
     # Remove all decimal numbers
-    number_pattern = "\s\d+(?:\.\d+)?"  # \s\d+'
+    number_pattern = r"\s\d+(?:\.\d+)?"  # \s\d+'
     number_replacement = " "  # ' nos'
     no_digit_txt = re.sub(number_pattern, number_replacement, no_punct_txt)
 
