@@ -84,7 +84,7 @@
     "training": {
         "directory": "./data",
         "input_files": ["*.txt"],
-        "keywords": ["search_vis_keywords.csv"],
+        "keywords": ["search_keywords.csv"],
         "epsilon": 0.1,
         "save_file": "search_vis_hyper.pkl"
     }
