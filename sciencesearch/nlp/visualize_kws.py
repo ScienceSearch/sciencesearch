@@ -61,6 +61,10 @@ class KeywordsVisualizer(ABC):
     def style_text(self, tokens, ngram):
         pass
 
+    @abstractmethod
+    def get_legend(self):
+        pass
+
 
 class SingleSetVisualizer(KeywordsVisualizer):
 
@@ -91,6 +95,14 @@ class SingleSetVisualizer(KeywordsVisualizer):
             return True, styled_str
         else:
             return False, ""
+        
+    def get_legend(self):
+        return """
+            <div class="legend">
+                <h2>Legend</h2>
+                <p><span class="keyword">Keywords in document</span></p>
+            </div>
+            """
 
 
 class MultiSetVisualizer(KeywordsVisualizer):
@@ -130,6 +142,16 @@ class MultiSetVisualizer(KeywordsVisualizer):
             styled_str = f'<span class="{class_name}">{" ".join(tokens)}</span> '
             return True, styled_str
         return False, ""
+    
+    def get_legend(self):
+        return """
+            <div class="legend">
+                <h2>Legend</h2>
+                <p><span class="kw-training">Only in training keywords set</span></p>
+                <p><span class="kw-tuned">Only in tuned keyword set</span></p>
+                <p><span class="kw-training kw-tuned">In both training and tuned keyword sets</span></p>
+            </div>
+            """
 
 
 class HTMLBuilder:
@@ -161,16 +183,7 @@ class HTMLBuilder:
 
     def generate_html(self, title: str = "", body_content: str = ""):
 
-        legend = ""
-        if isinstance(self.visualizer, MultiSetVisualizer):
-            legend = """
-            <div class="legend">
-                <h2>Legend</h2>
-                <p><span class="kw-training">Only in training keywords set</span></p>
-                <p><span class="kw-tuned">Only in tuned keyword set</span></p>
-                <p><span class="kw-training kw-tuned">In both training and tuned keyword sets</span></p>
-            </div>
-            """
+        legend = self.visualizer.get_legend()            
 
         html = f"""
         <!DOCTYPE html>
