@@ -84,11 +84,10 @@ def clean_text(text: str = None, filepath: str = None):
     print(f"clean text: {no_ascii_text}")
     print(f"no lone punct {no_lone_punct}")
 
-    # 6. Remove extra whitespaces
+    # 8. Remove extra whitespaces
     # =============================
     whitespace_pattern = r"\s+"
     no_whitespace_txt = re.sub(whitespace_pattern, " ", no_lone_punct)
-    # no_whitespace_txt = re.sub(r"[\n\t\r]", "", no_whitespace_txt)
     no_whitespace_txt = no_whitespace_txt.rstrip()
     no_whitespace_txt = no_whitespace_txt.lstrip()
     print(f"no whitespace text {no_whitespace_txt}")
