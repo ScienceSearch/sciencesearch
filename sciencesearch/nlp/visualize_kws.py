@@ -5,7 +5,6 @@ import webbrowser
 import os
 from nltk.tokenize import word_tokenize
 from sciencesearch.nlp.models import CaseSensitiveStemmer
-from sciencesearch.nlp.search import Searcher
 
 """A one-line summary of the module or program, terminated by a period.
 
@@ -372,83 +371,13 @@ class JsonView:
         searcher (Searcher): The searcher object containing keyword data.
     """
 
-    def __init__(self, searcher: Searcher):
+    def __init__(self):
         """Initializes JsonView with a Searcher object.
 
         Args:
             searcher (Searcher): Searcher object containing keyword data to be exported.
         """
-        self.searcher = searcher
-        self.__predicted_keywords = searcher.predicted_keywords.copy()
-        self.__file_keywords = searcher.file_keywords.copy()
-        self.__training_keywords = searcher.training_keywords.copy()
-
-    @property
-    def predicted_keywords(self):
-        """Saves predicted keywords to a JSON file.
-
-        Args:
-            filename (str): Path to the output JSON file.
-        """
-        JsonView._print_keywords(self.__predicted_keywords)
-        return self.__predicted_keywords.copy()
-
-    @property
-    def file_keywords(self):
-        """Saves file keywords to a JSON file.
-
-        Args:
-            filename (str): Path to the output JSON file.
-        """
-        JsonView._print_keywords(self.__file_keywords)
-        return self.__file_keywords.copy()
-
-    @property
-    def training_keywords(self):
-        """Prints training keywords
-        dict: A dictionary of input file names and their training keywords
-        """
-
-        JsonView._print_keywords(self.__training_keywords)
-        return self.__training_keywords.copy()
-
-    @staticmethod
-    def _print_keywords(keywords: dict):
-        for f, k in keywords.items():
-            print(f"{f} => {', '.join(k)}")
-
-    def save_predicted_keywords(self, filename: str):
-        """Saves predicted keywords to a JSON file.
-
-        Args:
-            filename (str): Path to the output JSON file.
-        """
-        res = self.__predicted_keywords.copy()
-
-        with open(filename, "w") as file:
-            json.dump(res, file, indent=4)
-
-    def save_file_keywords(self, filename: str):
-        """Saves file keywords to a JSON file.
-
-        Args:
-            filename (str): Path to the output JSON file.
-        """
-        res = self.__training_keywords.copy()
-
-        with open(filename, "w") as file:
-            json.dump(res, file, indent=4)
-
-    def save_training_keywords(self, filename: str):
-        """Saves training keywords to a JSON file.
-
-        Args:
-            filename (str): Path to the output JSON file.
-        """
-        res = self.__file_keywords.copy()
-
-        with open(filename, "w") as file:
-            json.dump(res, file, indent=4)
+        pass
 
     def save_all_keyword_sets(self, filename: str):
         """Saves all keyword sets in a combined JSON structure.
@@ -479,13 +408,14 @@ class JsonView:
         with open(filename, "w") as file:
             file.write(json.dumps(res))
 
-    @staticmethod
-    def visualize_from_config(config_file, json_file: str, save_filename: str, textfilename: str = None):
+    def visualize_from_config(
+        config_file: str, data: dict, save_filename: str, textfilename: str = None
+    ):
         """Creates HTML visualizations from configuration and JSON keyword files.
 
         This static method reads a configuration file to determine text file locations
         and a JSON file containing keyword data, then generates HTML visualizations
-        for a single file defined by text_file_name
+        for a single or multiple file defined by text_file_name
 
         Args:
             config_file (str): Path to JSON configuration file containing training directory.
@@ -504,31 +434,30 @@ class JsonView:
         output_file_dir = Path(saving["output_files_directory"])
         css_filepath = Path(saving["css_filepath"])
 
-
-        with open(f"{output_file_dir}/{json_file}") as json_data:
-            data = json.load(json_data)
         visualizers = []
         if textfilename:
-            keywords = data.items()[textfilename]
-            visualizer = JsonView.create_visualizer(file_dir, textfilename, keywords)
+            keywords = data[textfilename]
+            visualizer = JsonView._create_visualizer(file_dir, textfilename, keywords)
             visualizers.append(visualizer)
         else:
             for textfilename, keywords in data.items():
                 visualizer = None
-                visualizer = JsonView._create_visualizer(file_dir, textfilename, keywords)
+                visualizer = JsonView._create_visualizer(
+                    file_dir, textfilename, keywords
+                )
                 visualizers.append(visualizer)
         htmlbuilder = HTMLBuilder(
             visualizers=visualizers,
             filename=f"{output_file_dir}/{save_filename}",
             title="Highlighted Keywords",
-            css_styles_filepath= css_filepath
+            css_styles_filepath=css_filepath,
         )
-        htmlbuilder.write_file_and_run()
+        return htmlbuilder.html
 
     @staticmethod
     def _create_visualizer(file_dir, textfilename, keywords):
         filepath = f"{file_dir}/{textfilename}"
-        file = textfilename[:textfilename.find(".")]
+        file = textfilename[: textfilename.find(".")]
         visualizer = None
         if isinstance(keywords, list):
             visualizer = SingleSetVisualizer(

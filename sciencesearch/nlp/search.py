@@ -10,34 +10,26 @@ import importlib
 import json
 import logging
 from pathlib import Path
+from IPython.core.display import HTML
 
 # package
 from .sweep import Sweep
 from .hyper import Hyper
 from .train import load_hyper, run_hyper, train_hyper
+from .visualize_kws import JsonView
 
 logging.root.setLevel(logging.ERROR)  # quiet pke warnings
 
 
 class Searcher:
     """Dead simple search that can be created from a config file and some input files."""
-
-
-    # def __init__(self, file_keywords=None):
-    #     """Constructor."""
-    #     self._db = defaultdict(set)
-    #     self._fkw = {}
-    #     self._pred_kws = {}
-    #     self._training_kws = {}
-
-    #     if file_keywords:
-    #         self.add_entries(file_keywords)
     
     def __init__(self, predicted_keywords: dict[str, list[str]] = None, 
                  training_keywords:dict[str, list[str]] = None,  
-                 file_keywords: dict[str, list[str]] = None):
+                 file_keywords: dict[str, list[str]] = None,
+                 config_file: str = None):
         """Constructor."""
-        self.conf = None
+        self.config_file = config_file
         self._db = defaultdict(set)
         self._fkw = {}      
         self._pred_kws = predicted_keywords or {}
@@ -73,6 +65,33 @@ class Searcher:
         """ "Get the current mapping of files to the list of keywords associated with each."""
         return self._training_kws.copy()
 
+    def training_and_predicted_keywords(self) -> dict[str, dict[list[str]]]:
+        """Saves all keyword sets in a combined JSON structure.
+
+        Creates a JSON file where each filename maps to a dictionary containing
+        both training and tuned (predicted) keyword sets.
+
+        Args:
+            filename (str): Path to the output JSON file.
+
+        Note:
+            The output structure is:
+            {
+                "filename1.txt": {
+                    "training": ["keyword1", "keyword2", ...],
+                    "tuned": ["keyword3", "keyword4", ...]
+                },
+                ...
+            }
+        """
+        res = {}
+        for fn, keywords in self.file_keywords.items():
+            all_kws = {
+                "training": self.training_keywords.get(fn, []),
+                "tuned": self.predicted_keywords.get(fn, []),
+            }
+            res[fn] = all_kws
+        return res
 
     @classmethod
     def from_config(cls, config_file) -> "Searcher":
@@ -130,7 +149,7 @@ class Searcher:
                 kw = run_hyper(hyper_results, file_dir / fname)
                 search_kw[fname] = kw
         # initialize this class with results
-        return cls(predicted_keywords = search_kw, training_keywords = file_keywords)
+        return cls(predicted_keywords = search_kw, training_keywords = file_keywords, config_file = config_file)
 
     def find(self, *keywords):
         files = set()
@@ -139,3 +158,14 @@ class Searcher:
                 files.add(fname)
         return files
     
+
+    def view_keywords(self, show_training: bool = False, show_predicted: bool = False, textfilename: str = None):
+        data = {}
+        if show_training and show_predicted:
+            data = self.training_and_predicted_keywords()
+        elif show_training:
+            data = self.training_keywords
+        elif show_predicted:
+            data = self.predicted_keywords
+        html = JsonView.visualize_from_config(config_file =self.config_file,data = data, save_filename = 'vis_kws', textfilename= textfilename)
+        return html
