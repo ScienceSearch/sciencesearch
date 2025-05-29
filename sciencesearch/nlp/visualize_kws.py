@@ -528,7 +528,6 @@ class JsonView:
     @staticmethod
     def _create_visualizer(file_dir, textfilename, keywords):
         filepath = f"{file_dir}/{textfilename}"
-        print(f"filepath: {filepath}")
         file = textfilename[:textfilename.find(".")]
         visualizer = None
         if isinstance(keywords, list):
