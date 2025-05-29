@@ -87,5 +87,10 @@
         "keywords": ["search_keywords.csv"],
         "epsilon": 0.1,
         "save_file": "search_vis_hyper.pkl"
+
+    },
+    "saving": {
+        "css_filepath": "../shared/keyword_vis.css",
+        "output_files_directory": "../examples/results"
     }
 }

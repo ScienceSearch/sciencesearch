@@ -348,7 +348,7 @@ class HTMLBuilder:
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" type= "text/css" href="../shared/keyword_vis.css">
+            <link rel="stylesheet" type= "text/css" href="{self.css_styles_filepath}">
             
             <title>{self.title}</title>
         </head>
@@ -480,12 +480,12 @@ class JsonView:
             file.write(json.dumps(res))
 
     @staticmethod
-    def visualize_from_config(config_file, json_file: str, save_filename: str):
+    def visualize_from_config(config_file, json_file: str, save_filename: str, textfilename: str = None):
         """Creates HTML visualizations from configuration and JSON keyword files.
 
         This static method reads a configuration file to determine text file locations
         and a JSON file containing keyword data, then generates HTML visualizations
-        for each text file with its associated keywords.
+        for a single file defined by text_file_name
 
         Args:
             config_file (str): Path to JSON configuration file containing training directory.
@@ -493,33 +493,50 @@ class JsonView:
             json_file (str): Path to JSON file containing keyword data.
                 Can contain either single keyword lists or multi-set keyword dictionaries.
             save_file_prefix (str): Prefix for generated HTML filenames.
+            text_file_name (str): Specific file to create HTML for.
 
         Generated HTML files are automatically opened in the default web browser.
         """
         conf = json.load(open(config_file))
         training = conf["training"]
         file_dir = Path(training["directory"])
+        saving = conf["saving"]
+        output_file_dir = Path(saving["output_files_directory"])
+        css_filepath = Path(saving["css_filepath"])
 
-        with open(json_file) as json_data:
+
+        with open(f"{output_file_dir}/{json_file}") as json_data:
             data = json.load(json_data)
         visualizers = []
-
-        for textfilename, keywords in data.items():
-            filepath = f"{file_dir}/{textfilename}"
-            file = textfilename[: textfilename.find(".")]
-            visualizer = None
-            if isinstance(keywords, list):
-                visualizer = SingleSetVisualizer(
-                    keywords=keywords, txt_filepath=filepath, title=file
-                )
-            elif isinstance(keywords, dict):
-                visualizer = MultiSetVisualizer(
-                    keywords_dict=keywords, txt_filepath=filepath, title=file
-                )
+        if textfilename:
+            keywords = data.items()[textfilename]
+            visualizer = JsonView.create_visualizer(file_dir, textfilename, keywords)
             visualizers.append(visualizer)
+        else:
+            for textfilename, keywords in data.items():
+                visualizer = None
+                visualizer = JsonView._create_visualizer(file_dir, textfilename, keywords)
+                visualizers.append(visualizer)
         htmlbuilder = HTMLBuilder(
             visualizers=visualizers,
-            filename=f"{save_filename}",
+            filename=f"{output_file_dir}/{save_filename}",
             title="Highlighted Keywords",
+            css_styles_filepath= css_filepath
         )
         htmlbuilder.write_file_and_run()
+
+    @staticmethod
+    def _create_visualizer(file_dir, textfilename, keywords):
+        filepath = f"{file_dir}/{textfilename}"
+        print(f"filepath: {filepath}")
+        file = textfilename[:textfilename.find(".")]
+        visualizer = None
+        if isinstance(keywords, list):
+            visualizer = SingleSetVisualizer(
+                keywords=keywords, txt_filepath=filepath, title=file
+            )
+        elif isinstance(keywords, dict):
+            visualizer = MultiSetVisualizer(
+                keywords_dict=keywords, txt_filepath=filepath, title=file
+            )
+        return visualizer

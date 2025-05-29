@@ -87,5 +87,9 @@
         "keywords": ["slac_keywords.csv"],
         "epsilon": 0.05,
         "save_file": "slac_hyper.pkl"
+    },
+    "saving": {
+        "css_filepath": "../../shared/keyword_vis.css",
+        "output_files_directory": "../private_data/results"
     }
 }
