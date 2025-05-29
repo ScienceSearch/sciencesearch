@@ -1,3 +1,6 @@
+"""
+Test cases for for the nlp.preprocessing module.
+"""
 import json
 import pytest
 from sciencesearch.nlp.preprocessing import clean_text
