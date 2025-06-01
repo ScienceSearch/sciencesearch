@@ -119,5 +119,5 @@ extend-ignore-re = [
 ]
 
 # Add files under data/ to package
-[tool.setuptools.packages.find]
-where = ["data"]
+[tool.setuptools.package-data]
+sciencesearch = ["data/*.txt"]
