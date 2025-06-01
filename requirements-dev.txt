@@ -1,5 +1,5 @@
 beautifulsoup4
-black
+black[jupyter]==24.3.0
 pylint
 gensim
 pandas
