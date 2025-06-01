@@ -83,11 +83,15 @@ jobs:
         name: Install (dev)
         run: |
           pip install -r requirements-dev.txt
-
       - if: matrix.install-mode == 'standard'
         name: Install (standard)
         run: |
           pip install "git+${{ format('{0}/{1}@{2}', github.server_url, github.repository, github.ref) }}"
+      - name: NLP install steps
+        run: |
+          python -m spacy download en_core_web_sm
+          python -c "import nltk; nltk.download('stopwords')"
+          python -m nltk.downloader all -d "$HOME/nltk_data"
       - if: matrix.coverage
         name: Enable coverage for pytest
         run: echo PYTEST_ADDOPTS="$PYTEST_ADDOPTS --cov --cov-report=xml" >> $GITHUB_ENV

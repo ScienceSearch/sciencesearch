@@ -1,9 +1,12 @@
 beautifulsoup4
-black
+black[jupyter]==24.3.0
 pylint
 gensim
 pandas
+matplotlib
 rake_nltk
 scikit-learn
 yake
+pytest==7.*
+pytest-cov
 git+https://github.com/boudinfl/pke.git

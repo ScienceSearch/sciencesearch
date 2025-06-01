@@ -29,7 +29,7 @@ from gensim import similarities
 from sklearn.metrics.pairwise import cosine_similarity
 
 __this_dir = Path(__file__).parent  # guess
-DATA_DIR = __this_dir.parent.parent / "data"  # could be off
+DATA_DIR = __this_dir.parent / "data"  # could be off
 DEFAULTS = {"stopwords_file": DATA_DIR / "stopwords_en.txt"}
 
 _log = logging.getLogger(__name__)
