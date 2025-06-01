@@ -3,6 +3,7 @@ black[jupyter]==24.3.0
 pylint
 gensim
 pandas
+matplotlib
 rake_nltk
 scikit-learn
 yake
