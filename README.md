@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ScienceSearch/sciencesearch)
+
 # ScienceSearch NLP Tools
 
 **Note**: This repository is currently in _Alpha_ state. Things may not work!

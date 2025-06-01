@@ -30,6 +30,8 @@ dynamic = ["version"]
 dependencies = [
     "scipy<=1.12",
     "beautifulsoup4",
+    "pandas",
+    "matplotlib",
     "gensim",
     "rake_nltk",
     "scikit-learn",
@@ -38,10 +40,9 @@ dependencies = [
 ]
 [project.optional-dependencies]
 dev = [
-    "matplotlib",
-    "pandas",
     "pylint",
-    "pytest"
+    "pytest",
+    "pytest-cov"
 ]
 
 [tool.pytest.ini_options]
@@ -116,3 +117,7 @@ extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field
     '"id": "[0-9a-f]+",'
 ]
+
+# Add files under data/ to package
+[tool.setuptools.package-data]
+sciencesearch = ["data/*.txt"]

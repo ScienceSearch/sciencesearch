@@ -1,6 +1,7 @@
 """
 Training pipeline
 """
+
 from collections import defaultdict
 from glob import glob
 import logging
@@ -74,5 +75,3 @@ def run_hyper(
     elif text is None:
         raise ValueError("One of 'text' or 'text_file' should be provided")
     return ensm.run(text)
-
-
