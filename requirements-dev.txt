@@ -7,4 +7,6 @@ matplotlib
 rake_nltk
 scikit-learn
 yake
+pytest==7.*
+pytest-cov
 git+https://github.com/boudinfl/pke.git
