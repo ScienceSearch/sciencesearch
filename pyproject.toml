@@ -30,6 +30,7 @@ dynamic = ["version"]
 dependencies = [
     "scipy<=1.12",
     "beautifulsoup4",
+    "pandas",
     "gensim",
     "rake_nltk",
     "scikit-learn",
@@ -39,7 +40,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "matplotlib",
-    "pandas",
     "pylint",
     "pytest"
 ]
