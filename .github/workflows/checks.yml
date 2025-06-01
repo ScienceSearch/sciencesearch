@@ -91,6 +91,7 @@ jobs:
         run: |
           python -m spacy download en_core_web_sm
           python -c "import nltk; nltk.download('stopwords')"
+          python -m nltk.downloader all -d "$HOME/nltk_data"
       - if: matrix.coverage
         name: Enable coverage for pytest
         run: echo PYTEST_ADDOPTS="$PYTEST_ADDOPTS --cov --cov-report=xml" >> $GITHUB_ENV
