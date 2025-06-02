@@ -1,95 +1,134 @@
+"""
+Preprocess text.
+"""
+
+import logging
+from pathlib import Path
 from string import punctuation
 import regex as re
 
+_log = logging.getLogger(__name__)
 
-def clean_text(text: str = None, filepath: str = None):
-    """ Text preprocessing to remove extraneous symbols
+
+class Preprocessor:
+    """Preprocess text to remove extraneous symbols"""
+
+    def __init__(self):
+        """Constructor."""
+        # chain together cleaning functions in this order
+        self._functions = [
+            self._remove_newlines,
+            self._remove_urls,
+            self._remove_punctuation,
+            self._remove_numbers,
+            self._remove_numbers2,
+            self._remove_non_ascii,
+            self._remove_lone_punct,
+            self._remove_ws,
+        ]
+
+    def process_string(self, text: str) -> str:
+        """Perform preprocessing on a text string.
+
         Args:
-            text: a string of text
-            filepath: a filepath to a text file
+            text (str): Input string
 
-        Return:
-            Cleaned text
+        Returns:
+            str: Preprocessed string
         """
-    txt = text
-    if filepath is not None:
-        with open(filepath, 'r') as file:
-            txt = file.read()
+        return self._clean(text)
 
-    # 1. Remove newlines, tabs, and carriage returns
-    # =============================
-    no_breaks_txt = re.sub(r"[\n\t\r]", " ", txt)
-    # no_breaks_txt = re.sub("\n", " ", txt)
-    # no_breaks_txt = re.sub("\t", " ", no_breaks_txt)
-    # no_tab_txt = re.sub("\r", " ", no_breaks_txt)
+    def process_file(self, path: Path) -> str:
+        """Perform preprocessing on text from a file.
 
-    # 2. Remove URLs
-    # =============================
-    url_string = r"\S*https?://\S*"
-    url_replacement = " "
-    no_url_txt = re.sub(url_string, url_replacement, no_breaks_txt)
+        Args:
+            text (str): File to read
 
-    url_string = r"\S*www\.\S*"
-    url_replacement = " "
-    no_url_txt = re.sub(url_string, url_replacement, no_url_txt)
-    
-    # 3. Remove Punctuation
-    #  Define punctuation to remove (excluding ., -, :, ;)
-    # punct = '!"#$%&\'()*+/<=>?@[\\]^_`{|}~:;,•’”“\/'
-    # =============================
-    remove = punctuation + "•" + "–" + "’" + "”" + "“"
-    remove = remove.replace(".", "")  # don't remove full-stops
-    remove = remove.replace(",", "")  # don't remove commas
-    remove = remove.replace("’", "")  # don't remove apostrophes
-    remove = remove.replace("'", "")  # don't remove apostrophes
+        Returns:
+            str: Preprocessed file contents
+        """
+        text = path.open().read()
+        return self._clean(text)
 
+    def _clean(self, text):
+        for clean_fn in self._functions:
+            _log.debug(f"clean text with {clean_fn.__name__}")
+            text = clean_fn(text)
+        return text
 
-    remove = remove.replace(
-        "-", ""
-    )  # don't blanket-remove hyphens, will be removed after
-    # remove = remove.replace(":", "")  # don't remove colons
-    # remove = remove.replace(";", "")  # don't remove semi-colons
-    punct_pattern = r"[{}]".format(remove)  # create the pattern
-    punct_pattern = r"[{}]".format(remove)  # create the pattern
-    no_punct_txt = re.sub(punct_pattern, " ", no_url_txt)
+    def _remove_newlines(self, text):
+        """Remove newlines, tabs, and carriage returns"""
+        return re.sub(r"[\n\t\r]", " ", text)
 
-    # Only remove dashes with spaces before or after them. This way abbreviation replacements with dashes are preserved.
-    # Remove ellipsis (...)
-    no_punct_txt = re.sub(
+    def _remove_urls(self, text):
+        """Remove URLs"""
+        url_string = r"\S*https?://\S*"
+        url_replacement = " "
+        no_url_txt = re.sub(url_string, url_replacement, text)
+
+        url_string = r"\S*www\.\S*"
+        url_replacement = " "
+        no_url_txt = re.sub(url_string, url_replacement, no_url_txt)
+        return no_url_txt
+
+    def _remove_punctuation(self, text):
+        """Remove Punctuation"""
+        #  Define punctuation to remove (excluding ., -, :, ;)
+        # punct = '!"#$%&\'()*+/<=>?@[\\]^_`{|}~:;,•’”“\/'
+        # =============================
+        remove = punctuation + "•" + "–" + "’" + "”" + "“"
+        remove = remove.replace(".", "")  # don't remove full-stops
+        remove = remove.replace(",", "")  # don't remove commas
+        remove = remove.replace("’", "")  # don't remove apostrophes
+        remove = remove.replace("'", "")  # don't remove apostrophes
+
+        remove = remove.replace(
+            "-", ""
+        )  # don't blanket-remove hyphens, will be removed after
+        # remove = remove.replace(":", "")  # don't remove colons
+        # remove = remove.replace(";", "")  # don't remove semi-colons
+        punct_pattern = r"[{}]".format(remove)  # create the pattern
+        punct_pattern = r"[{}]".format(remove)  # create the pattern
+        no_punct_txt = re.sub(punct_pattern, " ", text)
+
+        # Only remove dashes with spaces before or after them. This way abbreviation replacements with dashes are preserved.
+        # Remove ellipsis (...)
+        no_punct_txt = re.sub(
             r"(\s?)\.{2,}",
             r".",
             re.sub(r"(\s?)[-](\s)", r" ", re.sub(r"(\s)[-](\s?)", r" ", no_punct_txt)),
         )
-    
-    # 4. Remove numbers
-    # =============================
-    # Remove all decimal numbers
-    number_pattern = r"\s\d+(?:\.\d+)?"  # \s\d+'
-    number_replacement = " "  # ' nos'
-    no_digit_txt = re.sub(number_pattern, number_replacement, no_punct_txt)
+        return no_punct_txt
 
-    # 5.  Remove all numbers preceeded by a non-alphanumeric character, e.g. a dash. This will leave chemical formulas in.
-    number_pattern = r"[^a-zA-Z0-9]+\d+"
+    def _remove_numbers(self, text):
+        """Remove numbers."""
+        # Remove all decimal numbers
+        number_pattern = r"(^|\s)\d+(?:\.\d+)?"  # \s\d+'
+        number_replacement = " "  # ' nos'
+        no_digit_txt = re.sub(number_pattern, number_replacement, text)
+        return no_digit_txt
 
-    number_replacement = " "  #
-    no_digit_txt = re.sub(number_pattern, number_replacement, no_digit_txt)
+    def _remove_numbers2(self, text):
+        """Remove all numbers preceeded by a non-alphanumeric character,
+        e.g. a dash. This will leave chemical formulas in.
+        """
+        number_pattern = r"[^a-zA-Z0-9]+\d+"
+        number_replacement = " "  #
+        return re.sub(number_pattern, number_replacement, text)
 
-    # 6. Remove non-ascii characters
-    # ================================
-    no_ascii_text = no_digit_txt.encode("ascii", "ignore").decode()
+    def _remove_non_ascii(self, text):
+        """Remove non-ascii characters."""
+        return text.encode("ascii", "ignore").decode()
 
-    # 7. Remove lone punctuation
-    no_lone_punct = re.sub(r'(?<=\s)[^\w\s]+(?=\s)', '', no_ascii_text)
-    
-    print(f"clean text: {no_ascii_text}")
-    print(f"no lone punct {no_lone_punct}")
+    def _remove_lone_punct(self, text):
+        """Remove lone punctuation."""
+        return re.sub(r"(?<=\s)[^\w\s]+(?=\s)", "", text)
 
-    # 8. Remove extra whitespaces
-    # =============================
-    whitespace_pattern = r"\s+"
-    no_whitespace_txt = re.sub(whitespace_pattern, " ", no_lone_punct)
-    no_whitespace_txt = no_whitespace_txt.rstrip()
-    no_whitespace_txt = no_whitespace_txt.lstrip()
-    print(f"no whitespace text {no_whitespace_txt}")
-
-    return no_whitespace_txt
+    def _remove_ws(self, text):
+        """Remove extra whitespaces."""
+        whitespace_pattern = r"\s+"
+        no_whitespace_txt = re.sub(whitespace_pattern, " ", text)
+        # no_whitespace_txt = re.sub(r"[\n\t\r]", "", no_whitespace_txt)
+        no_whitespace_txt = no_whitespace_txt.rstrip()
+        no_whitespace_txt = no_whitespace_txt.lstrip()
+        return no_whitespace_txt

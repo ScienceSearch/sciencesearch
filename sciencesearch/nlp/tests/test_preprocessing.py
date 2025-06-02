@@ -1,33 +1,37 @@
 """
 Test cases for for the nlp.preprocessing module.
 """
+
 import json
+import logging
+import os
 import pytest
-from sciencesearch.nlp.preprocessing import clean_text
+from sciencesearch.nlp.preprocessing import Preprocessor
 
 
-def read_test_cases_from_json(file_path):
-    test_cases = []
-
-    with open(file_path, "r") as file:
-        data = json.load(file)
-
-    for item in data:
-        test_cases.append(
-            (item["description"], item["input_text"], item["expected_output"])
-        )
-
-    return test_cases
+@pytest.fixture
+def log():
+    log = logging.getLogger("sciencesearch.nlp.preprocessing")
+    if os.environ.get("TEST_DEBUG", None):
+        log.setLevel(logging.DEBUG)
+        h = logging.StreamHandler()
+        h.setFormatter(logging.Formatter("[%(levelname)s] %(name)s: %(message)s"))
+        log.addHandler(h)
 
 
-test_cases = read_test_cases_from_json(
-    "sciencesearch/nlp/tests/test_files/preprocessing/preprocessing_test_text.json"
-)
+@pytest.fixture
+def pp_text(request):
+    pre_text_dir = request.path.parent / "test_files" / "preprocessing"
+    for name in pre_text_dir.glob("*.json"):
+        with (pre_text_dir / name).open("r") as f:
+            yield json.load(f)
 
 
-@pytest.mark.parametrize("description, input_text, expected_output", test_cases)
-def test_clean_individual_features(description, input_text, expected_output):
-    cleaned_text = clean_text(text=input_text)
-    assert (
-        cleaned_text == expected_output
-    ), f"Cleaned text does not match expected output for case {description}"
+@pytest.mark.unit
+def test_clean_individual_features(pp_text, log):
+    prep = Preprocessor()
+    for tc in pp_text:
+        err_msg = f"Failed: {tc['description']}"
+        assert (
+            prep.process_string(text=tc["input_text"]) == tc["expected_output"]
+        ), err_msg
