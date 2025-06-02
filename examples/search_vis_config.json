@@ -1,0 +1,96 @@
+{
+    "algorithms": {
+        "yake": {
+            "module": "sciencesearch.nlp.models",
+            "class": "Yake"
+        },
+        "rake": {
+            "module": "sciencesearch.nlp.models",
+            "class": "Rake"
+        },
+        "kpminer": {
+            "module": "sciencesearch.nlp.models",
+            "class": "KPMiner"
+        }
+    },
+    "sweeps": {
+        "kpminer": {
+            "lasf": {
+                "_type": "range",
+                "lb": 1,
+                "ub": 3,
+                "step": 1
+            },
+            "-cutoff": {
+                "_type": "range",
+                "lb": 200,
+                "ub": 1300,
+                "nsteps": 5
+            },
+            "-alpha": {
+                "_type": "range",
+                "lb": 3.0,
+                "ub": 4.0,
+                "step": 0.2
+            },
+            "sigma": {
+                "_type": "range",
+                "lb": 2.8,
+                "ub": 3.0,
+                "step": 0.2
+            }
+        },
+        "rake": {
+            "min_len": {
+                "_type": "range",
+                "lb": 1,
+                "ub": 1,
+                "step": 1
+            },
+            "max_len": {
+                "_type": "range",
+                "lb": 1,
+                "ub": 3,
+                "step": 1
+            },
+            "min_kw_occ": {
+                "_type": "range",
+                "lb": 1,
+                "ub": 10,
+                "step": 1
+            },
+            "include_repeated_phrases": {
+                "_type": "discrete",
+                "values": [false, true]
+            }
+        },
+        "yake": {
+            "ws": {
+                "_type": "range",
+                "lb": 1,
+                "ub": 3,
+                "step": 1
+            },
+            "dedup": {
+                "_type": "discrete",
+                "values": [0.8, 0.9, 0.95]
+            },
+            "dedup_method": {
+                "_type": "discrete",
+                "values": ["leve", "seqm"]
+            }
+        }
+    },
+    "training": {
+        "directory": "./data",
+        "input_files": ["*.txt"],
+        "keywords": ["search_keywords.csv"],
+        "epsilon": 0.1,
+        "save_file": "search_vis_hyper.pkl"
+
+    },
+    "saving": {
+        "css_filepath": "../shared/keyword_vis.css",
+        "output_files_directory": "../examples/results"
+    }
+}
