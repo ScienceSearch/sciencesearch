@@ -161,7 +161,7 @@ class Searcher:
         files = set()
         for k in keywords:
             for fname in self._db[k]:
-                files.add(fname) 
+                files.add(fname)
         return files
 
     def view_keywords(
