@@ -1,0 +1,78 @@
+[
+ {
+   "description": "remove newlines",
+   "input_text": "this \n has \n line\n breaks\n",
+   "expected_output": "this has line breaks"
+ },
+ {
+   "description": "remove tabs",
+   "input_text": "this \t has \t some \ttabs\t",
+   "expected_output": "this has some tabs"
+ },
+ {
+   "description": "remove carriage returns",
+   "input_text": "this \r has \rcarriage returns\r",
+   "expected_output": "this has carriage returns"
+ },
+ {
+   "description": "remove URLs",
+   "input_text": "this has www.google.com urls of two https://www.google.com/search types",
+   "expected_output": "this has urls of two types"
+ },
+ {
+   "description": "remove punctuation",
+   "input_text": "this!has so\"\" much$ $ % punctua& \\ /()  '!\\\"# $%&'() *+/< = > ? @ []^   `{| }~:;, •’ ” “'tion",
+   "expected_output": "this has so much punctua 'tion"
+ },
+ {
+   "description": "Do not remove hyphens in between words",
+   "input_text": "this!has-so -many hyphens",
+   "expected_output": "this has-so many hyphens"
+ },
+ {
+   "description": "Do not remove periods",
+   "input_text": "this.has so. many periods",
+   "expected_output": "this.has so. many periods"
+ },
+ {
+   "description": "do not remove commas",
+   "input_text": "this,has so, many commas",
+   "expected_output": "this,has so, many commas"
+ },
+ {
+   "description": "do not remove apostrophes",
+   "input_text": "this'has so' many apostrophes",
+   "expected_output": "this'has so' many apostrophes"
+ },
+ {
+   "description": "remove lone numbers",
+   "input_text": "this has 2 numbers4you",
+   "expected_output": "this has numbers4you"
+ },
+ {
+   "description": "remove decimal numbers",
+   "input_text": "this has 2.5 numbers4.25you",
+   "expected_output": "this has numbers4 you"
+ },
+ {
+   "description": "remove all numbers preceeded by a non-alphanumeric characters",
+   "input_text": "this has -2.5 numbers!4.25you",
+   "expected_output": "this has numbers you"
+ },
+ {
+   "description": "remove extra whitespace",
+   "input_text": "       so            much           whitespace       ",
+   "expected_output": "so much whitespace"
+ },
+ {
+   "description": "remove non-ascii characters",
+   "input_text": "non é, à, ö, ñ ascii characters",
+   "expected_output": "non ascii characters"
+ },
+
+  {
+   "description": "combined",
+    "input_text": "Once there lived two brothers who were princes in the land.\nThe elder 1brother1 was a hunter. He \"loved\" the deep woods and the chase.\nHe went from dawn to dark with his bow and his arrows. Swiftly he could\nrun; he was strong and 11 bright-eyed. The younger brother was a dreamer;\nhis eyes were gentle. \n\n\nFrom dawn to dark he would sit with his book or\nwith his thoughts. Sweetly could   こんにちは he sing of love, or of war, or of the\ngreen fields, and tell stories of the fairies and www.yahoo.com/wing of the time of the\ngods.\nUpon a fair day of summer www.google.com the hunter betook himself very early to the\n\n\nwoods, as was his wont. But the     dreamer took his book in his hand, and,\nmusing, he wandered by the stream's '.''        side, where grew the yellow mimulus.\n\"It is the fairies' ``      money,\" he said; \"it will buy all the joys of\nfairyland!\" So he •went o•n his way, smiling.\nAnd when he had continued for some time, he came to a holy shrine. And\nthere led to the shrine a hundred steps, moss-grown and grey. Beside\nthe steps were gu $$ ()ardi)an lions, carved in stone. Behind the shrine was\nFugi, the Mystic Mountain, white and beautiful, and all the lesser hills\nrose softly up like prayers.\n\"O peerless Fugi,\" said the dreamer, \"O passionless wonder mountain! To\nsee thee is to hear sweet music without sound, the blessed harmony of\nsilence.",
+    "expected_output": "Once there lived two brothers who were princes in the land. The elder brother1 was a hunter. He loved the deep woods and the chase. He went from dawn to dark with his bow and his arrows. Swiftly he could run he was strong and bright-eyed. The younger brother was a dreamer his eyes were gentle. From dawn to dark he would sit with his book or with his thoughts. Sweetly could he sing of love, or of war, or of the green fields, and tell stories of the fairies and of the time of the gods. Upon a fair day of summer the hunter betook himself very early to the woods, as was his wont. But the dreamer took his book in his hand, and, musing, he wandered by the stream's side, where grew the yellow mimulus. It is the fairies' money, he said it will buy all the joys of fairyland So he went o n his way, smiling. And when he had continued for some time, he came to a holy shrine. And there led to the shrine a hundred steps, moss-grown and grey. Beside the steps were gu ardi an lions, carved in stone. Behind the shrine was Fugi, the Mystic Mountain, white and beautiful, and all the lesser hills rose softly up like prayers. O peerless Fugi, said the dreamer, O passionless wonder mountain To see thee is to hear sweet music without sound, the blessed harmony of silence."
+ }
+]
