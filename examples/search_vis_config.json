@@ -33,10 +33,10 @@
                 "ub": 4.0,
                 "step": 0.2
             },
-            "-sigma": {
+            "sigma": {
                 "_type": "range",
-                "lb": 2.6,
-                "ub": 3.2,
+                "lb": 2.8,
+                "ub": 3.0,
                 "step": 0.2
             }
         },
@@ -82,14 +82,15 @@
         }
     },
     "training": {
-        "directory": "../private_data/slac_logs",
+        "directory": "./data",
         "input_files": ["*.txt"],
-        "keywords": ["slac_keywords.csv"],
-        "epsilon": 0.05,
-        "save_file": "slac_hyper.pkl"
+        "keywords": ["search_keywords.csv"],
+        "epsilon": 0.1,
+        "save_file": "search_vis_hyper.pkl"
+
     },
     "saving": {
-        "css_filepath": "../../shared/keyword_vis.css",
-        "output_files_directory": "../private_data/results"
+        "css_filepath": "../shared/keyword_vis.css",
+        "output_files_directory": "../examples/results"
     }
 }

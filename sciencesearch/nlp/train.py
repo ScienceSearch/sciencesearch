@@ -36,7 +36,6 @@ def train_hyper(
     root_dir = directory if directory else Path.cwd()
     for training_file, gold_kw in file_kw.items():
         with open(root_dir / training_file) as f:
-            print(f"Processing file: {Path(f.name).name}")
             text = f.read()
             res = hyperparameter.get_top_f1(text, gold_kw, epsilon=epsilon)
             hyper_results.extend(res)
