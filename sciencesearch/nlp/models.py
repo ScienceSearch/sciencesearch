@@ -222,12 +222,14 @@ class Algorithm(ABC):
         kw = self._get_keywords(text)
         t2 = time.time() - t1
         self._run_timings = {"stem": t1, "extract": t2, "total": t1 + t2}
-        if not kw:
-            # stop and catch fire if no keywords (looking at you, KPMiner)
-            raise RuntimeError("No keywords extracted")
-        _log.debug(
-            f"Finished algorithm {self._name} time={self._run_timings['total']:.3g}s"
-        )
+        print(kw)
+        # if not kw and text:
+        #     print(text)
+        #     # stop and catch fire if no keywords (looking at you, KPMiner)
+        #     raise RuntimeError("No keywords extracted")
+        # _log.debug(
+        #     f"Finished algorithm {self._name} time={self._run_timings['total']:.3g}s"
+        # )
         return kw
 
     @abstractmethod

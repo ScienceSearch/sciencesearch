@@ -25,6 +25,7 @@ class Preprocessor:
             self._remove_non_ascii,
             self._remove_lone_punct,
             self._remove_ws,
+            self._turn_lower
         ]
 
     def process_string(self, text: str) -> str:
@@ -132,3 +133,8 @@ class Preprocessor:
         no_whitespace_txt = no_whitespace_txt.rstrip()
         no_whitespace_txt = no_whitespace_txt.lstrip()
         return no_whitespace_txt
+    
+    def _turn_lower(self, text):
+        """ Turn into lowercase """
+        return text.lower()
+
