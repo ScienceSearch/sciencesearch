@@ -82,11 +82,11 @@
         }
     },
     "training": {
-        "directory": "../private_data/input",
+        "directory": "../private_data/slac_logs",
         "input_files": ["*.txt"],
         "keywords": ["slac_keywords.csv"],
         "epsilon": 0.05,
-        "save_file": "slac_hyper_elogs.pkl"
+        "save_file": "slac_hyper_all_elogs.pkl"
     },
     "saving": {
         "css_filepath": "../../shared/keyword_vis.css",
