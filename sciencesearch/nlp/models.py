@@ -167,7 +167,7 @@ class Algorithm(ABC):
     PARAM_SPEC = [
         PS("stopwords", Stopwords, "Stopwords", None),
         PS("stemming", bool, "Whether to do stemming", False),
-        PS("num_keywords", int, "How many keywords to extract", 10),
+        PS("num_keywords", int, "How many keywords to extract", 7),
         PS(
             "keyword_sort",
             list,
@@ -222,7 +222,6 @@ class Algorithm(ABC):
         kw = self._get_keywords(text)
         t2 = time.time() - t1
         self._run_timings = {"stem": t1, "extract": t2, "total": t1 + t2}
-        print(kw)
         # if not kw and text:
         #     print(text)
         #     # stop and catch fire if no keywords (looking at you, KPMiner)
