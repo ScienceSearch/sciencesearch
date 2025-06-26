@@ -13,7 +13,7 @@
             "class": "KPMiner"
         }
     },
-    "sweeps": {
+    "sweeps": { // see hyperparam_methods_documentation.ipynb for more information
         "kpminer": {
             "lasf": {
                 "_type": "range",
@@ -82,14 +82,15 @@
         }
     },
     "training": {
-        "directory": "../private_data/input",
-        "input_files": ["*.txt"],
-        "keywords": ["slac_keywords.csv"],
-        "epsilon": 0.05,
-        "save_file": "slac_hyper_elogs.pkl"
+        "directory": "../private_data/inputs", // Where your input files live
+        "input_files": ["*.txt"], // What kind of files to read
+        "keywords": ["slac_keywords.csv"],  // Your "gold standard" 
+        "epsilon": 0.05, // How close is "good enough"
+        "save_file": "slac_hyper.pkl" // Filename for storing the ensemble algorithm (do not need to train again to run on new files)
     },
     "saving": {
-        "css_filepath": "../../shared/keyword_vis.css",
-        "output_files_directory": "../private_data/results"
+        "css_filepath": "../../shared/keyword_vis.css", // Pretty styling for visualization
+        "output_files_directory": "../private_data/results" // Where to save final  folder
     }
+    "database": "../private_data/database.db" // Where to find your data
 }
