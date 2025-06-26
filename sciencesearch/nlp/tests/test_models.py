@@ -12,6 +12,7 @@ from sciencesearch.nlp.models import (
     PS,
 )
 
+
 @pytest.mark.unit
 def test_casesensitive_stemmer():
     st = CaseSensitiveStemmer()

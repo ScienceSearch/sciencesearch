@@ -7,7 +7,6 @@ from sciencesearch.nlp.hyper import Hyper
 from .test_sweep import sweep_text
 
 
-
 @pytest.mark.unit
 def test_hyper_init():
     Hyper()
