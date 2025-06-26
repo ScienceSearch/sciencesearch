@@ -65,7 +65,6 @@ class SLACDatabaseDataExtractor:
         patterns_list = patterns.split(",")
         pattern_sql = "LOWER(TRIM(content)) LIKE "
         pattern_sql += " OR LOWER(TRIM(content)) LIKE ".join(patterns_list)
-        print(pattern_sql)
         return pattern_sql
 
     def remove_html(self):
@@ -125,14 +124,6 @@ class SLACDatabaseDataExtractor:
         OR {pattern_sql}
         ;"""
 
-        print(query_params)
-        """OR LOWER(TRIM(content)) LIKE 'running%'
-        OR LOWER(TRIM(content)) LIKE 'beam on%'
-        OR LOWER(TRIM(content)) LIKE 'run number%'
-        OR  LOWER(TRIM(content)) LIKE 'sample name%'
-        OR  LOWER(TRIM(content)) LIKE 'RE(bp.daq_%'
-        OR  LOWER(TRIM(content)) LIKE 'notch scan%'
-        OR  LOWER(TRIM(content)) LIKE 'lxt scan%' """
         self.cursor.execute(query_params_drop)
         self.cursor.execute(query_params)
 
@@ -166,7 +157,6 @@ class SLACDatabaseDataExtractor:
             {pattern_sql}
         );"""
 
-        print(query_commentary)
         self.cursor.execute(query_commentary_drop)
         self.cursor.execute(query_commentary)
 
