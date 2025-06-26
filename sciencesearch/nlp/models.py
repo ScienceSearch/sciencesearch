@@ -6,27 +6,18 @@ Natural Language Processing models to extract keywords from documents
 from abc import ABC, abstractmethod
 from collections import namedtuple
 import logging
-import itertools
 from operator import itemgetter
 from pathlib import Path
-from string import punctuation
 import time
-from typing import Iterable, Optional, Type, Any
+from typing import Iterable, Any
 
 # third-party
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
 import yake
 from rake_nltk import Rake as _Rake
 from rake_nltk import Metric
 import pke
-from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from nltk.tokenize import sent_tokenize, word_tokenize
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim import similarities
-from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import word_tokenize
 
 __this_dir = Path(__file__).parent  # guess
 DATA_DIR = __this_dir.parent / "data"  # could be off
