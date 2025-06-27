@@ -7,15 +7,14 @@ from sciencesearch.nlp.preprocessing import Preprocessor
 
 
 class SLACDatabaseDataExtractor:
-    with open("../private_data/queries_info.json", "r") as f:
-        __queries_information = json.load(f)
-
     def __init__(self, config_file: str):
         conf = json.load(open(config_file))
         training = conf["training"]
         self.training_file_path = Path(training["directory"])
         self.fp = conf["database"]
         self.connected = False
+        with open("../private_data/queries_info.json", "r") as f:
+            self._query_info = json.load(f)
 
     def create_connection(self) -> Cursor:
         self.connection = sqlite3.connect(self.fp)
@@ -61,7 +60,7 @@ class SLACDatabaseDataExtractor:
                 f.write(content_cleaned)
 
     def create_pattern_matching_sql(self):
-        patterns = SLACDatabaseDataExtractor.__queries_information["parameter_patterns"]
+        patterns = self._query_info["parameter_patterns"]
         patterns_list = patterns.split(",")
         pattern_sql = "LOWER(TRIM(content)) LIKE "
         pattern_sql += " OR LOWER(TRIM(content)) LIKE ".join(patterns_list)
@@ -69,7 +68,7 @@ class SLACDatabaseDataExtractor:
 
     def remove_html(self):
         self.create_connection()
-        html_tags = SLACDatabaseDataExtractor.__queries_information["html_tags"]
+        html_tags = self._query_info["html_tags"]
         drop_table_query = f""" DROP TABLE IF EXISTS logbook_reduced;"""
         create_table_query = f"""
         CREATE TABLE logbook_reduced AS
@@ -108,7 +107,7 @@ class SLACDatabaseDataExtractor:
         self.close_connection()
 
     def process_experiment_elog_parameters(self):  # params
-        param_tags = SLACDatabaseDataExtractor.__queries_information["parameter_tags"]
+        param_tags = self._query_info["parameter_tags"]
         pattern_sql = self.create_pattern_matching_sql()
 
         self.create_connection()
@@ -141,7 +140,7 @@ class SLACDatabaseDataExtractor:
         if "logbook_reduced" not in self.get_tables():
             self.remove_html()
 
-        param_tags = SLACDatabaseDataExtractor.__queries_information["parameter_tags"]
+        param_tags = self._query_info["parameter_tags"]
         pattern_sql = self.create_pattern_matching_sql()
 
         query_commentary_drop = """DROP TABLE IF EXISTS logbook_commentary"""
