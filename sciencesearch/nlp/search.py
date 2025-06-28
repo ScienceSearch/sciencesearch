@@ -10,7 +10,8 @@ import importlib
 import json
 import logging
 from pathlib import Path
-from IPython.core.display import HTML
+import pandas as pd
+
 
 # package
 from .sweep import Sweep
@@ -21,7 +22,7 @@ from .visualize_kws import JsonView
 logging.root.setLevel(logging.ERROR)  # quiet pke warnings
 
 
-class Searcher:
+class KeywordExplorer:
     """Dead simple search that can be created from a config file and some input files."""
 
     def __init__(
@@ -33,6 +34,7 @@ class Searcher:
     ):
         """Constructor."""
         self.config_file = config_file
+        self.config = json.load(open(config_file))
         self._db = defaultdict(set)
         self._fkw = {}
         self._pred_kws = predicted_keywords or {}
@@ -81,7 +83,7 @@ class Searcher:
             {
                 "filename1.txt": {
                     "training": ["keyword1", "keyword2", ...],
-                    "tuned": ["keyword3", "keyword4", ...]
+                    "predicted": ["keyword3", "keyword4", ...]
                 },
                 ...
             }
@@ -90,13 +92,13 @@ class Searcher:
         for fn, keywords in self.file_keywords.items():
             all_kws = {
                 "training": self.training_keywords.get(fn, []),
-                "tuned": self.predicted_keywords.get(fn, []),
+                "predicted": self.predicted_keywords.get(fn, []),
             }
             res[fn] = all_kws
         return res
 
     @classmethod
-    def from_config(cls, config_file) -> "Searcher":
+    def from_config(cls, config_file) -> "KeywordExplorer":
         conf = json.load(open(config_file))
         training = conf["training"]
         file_dir = Path(training["directory"])
@@ -184,3 +186,22 @@ class Searcher:
             textfilename=textfilename,
         )
         return html
+
+    def save_keywords_to_file(self, file_name):
+        rows = []
+        for name, conditions in self.training_and_predicted_keywords().items():
+            experiment_name = name.split(".")[0]
+            row = {"experiment_name": experiment_name}
+            row.update(conditions)
+            rows.append(row)
+
+        saving = self.config["saving"]
+        file_dir = saving["output_files_directory"]
+
+        # Ensure file path exists
+        folder_path = Path(file_dir)
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Create df and save to CSV
+        df = pd.DataFrame(rows)
+        df.to_csv(f"{file_dir}/{file_name}.csv", index=False)

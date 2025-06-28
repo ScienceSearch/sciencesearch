@@ -277,8 +277,8 @@ class MultiSetVisualizer(KeywordsVisualizer):
             <div class="legend">
                 <h2>Legend</h2>
                 <p><span class="kw-training">Only in training keywords set</span></p>
-                <p><span class="kw-tuned">Only in tuned keyword set</span></p>
-                <p><span class="kw-training kw-tuned">In both training and tuned keyword sets</span></p>
+                <p><span class="kw-predicted">Only in predicted keyword set</span></p>
+                <p><span class="kw-training kw-predicted">In both training and predicted keyword sets</span></p>
             </div>
             """
 
@@ -393,7 +393,7 @@ class JsonView:
             {
                 "filename1.txt": {
                     "training": ["keyword1", "keyword2", ...],
-                    "tuned": ["keyword3", "keyword4", ...]
+                    "predicted": ["keyword3", "keyword4", ...]
                 },
                 ...
             }
@@ -402,7 +402,7 @@ class JsonView:
         for fn, keywords in self.__file_keywords.items():
             all_kws = {
                 "training": self.__training_keywords.get(fn, []),
-                "tuned": self.__predicted_keywords.get(fn, []),
+                "predicted": self.__predicted_keywords.get(fn, []),
             }
             res[fn] = all_kws
         with open(filename, "w") as file:

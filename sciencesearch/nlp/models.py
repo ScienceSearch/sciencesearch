@@ -6,27 +6,18 @@ Natural Language Processing models to extract keywords from documents
 from abc import ABC, abstractmethod
 from collections import namedtuple
 import logging
-import itertools
 from operator import itemgetter
 from pathlib import Path
-from string import punctuation
 import time
-from typing import Iterable, Optional, Type, Any
+from typing import Iterable, Any
 
 # third-party
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
 import yake
 from rake_nltk import Rake as _Rake
 from rake_nltk import Metric
 import pke
-from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from nltk.tokenize import sent_tokenize, word_tokenize
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim import similarities
-from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import word_tokenize
 
 __this_dir = Path(__file__).parent  # guess
 DATA_DIR = __this_dir.parent / "data"  # could be off
@@ -167,7 +158,7 @@ class Algorithm(ABC):
     PARAM_SPEC = [
         PS("stopwords", Stopwords, "Stopwords", None),
         PS("stemming", bool, "Whether to do stemming", False),
-        PS("num_keywords", int, "How many keywords to extract", 10),
+        PS("num_keywords", int, "How many keywords to extract", 7),
         PS(
             "keyword_sort",
             list,
@@ -222,12 +213,13 @@ class Algorithm(ABC):
         kw = self._get_keywords(text)
         t2 = time.time() - t1
         self._run_timings = {"stem": t1, "extract": t2, "total": t1 + t2}
-        if not kw:
-            # stop and catch fire if no keywords (looking at you, KPMiner)
-            raise RuntimeError("No keywords extracted")
-        _log.debug(
-            f"Finished algorithm {self._name} time={self._run_timings['total']:.3g}s"
-        )
+        # if not kw and text:
+        #     print(text)
+        #     # stop and catch fire if no keywords (looking at you, KPMiner)
+        #     raise RuntimeError("No keywords extracted")
+        # _log.debug(
+        #     f"Finished algorithm {self._name} time={self._run_timings['total']:.3g}s"
+        # )
         return kw
 
     @abstractmethod

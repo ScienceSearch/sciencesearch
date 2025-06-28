@@ -1,13 +1,13 @@
-.keyword {color: #000000; font-weight: bold;}
+.keyword {color: #274792; font-weight: bold;}
 .highlight { background-color: yellow; font-weight: bold; }
 
 /* For multi-set visualizer */
 .kw-training { color: #B99512; font-weight: bold; }
 .kw-default { color: #B83C08; font-weight: bold; }
-.kw-tuned { color: #2F539B; font-weight: bold; }
+.kw-predicted{ color: #2F539B; font-weight: bold; }
 
 /* For both single-set and multi-set classes */
-.kw-training.kw-default:not(.kw-tuned) { color: #FF7722; font-weight: bold; }
-.kw-training.kw-tuned:not(.kw-default) { color: #006A4E; font-weight: bold; }
-.kw-default.kw-tuned:not(.kw-training) { color: #7D0552; font-weight: bold; }
-.kw-training.kw-default.kw-tuned { color: #000000; font-weight: bold; }
+.kw-training.kw-default:not(.kw-predicted) { color: #FF7722; font-weight: bold; }
+.kw-training.kw-predicted:not(.kw-default) { color: #006A4E; font-weight: bold; }
+.kw-default.kw-predicted:not(.kw-training) { color: #7D0552; font-weight: bold; }
+.kw-training.kw-default.kw-predicted { color: #000000; font-weight: bold; }

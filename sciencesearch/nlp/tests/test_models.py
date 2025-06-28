@@ -11,7 +11,6 @@ from sciencesearch.nlp.models import (
     KPMiner,
     PS,
 )
-from sciencesearch.nlp.sweep import Sweep
 
 
 @pytest.mark.unit
