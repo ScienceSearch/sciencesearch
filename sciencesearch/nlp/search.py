@@ -21,7 +21,7 @@ from .sweep import Sweep
 from .hyper import Hyper
 from .train import load_hyper, run_hyper, train_hyper
 from .visualize_kws import JsonView
-from .export import ExportFormat, export
+from .export import ExportFormat, export, Exporter
 
 logging.root.setLevel(logging.ERROR)  # quiet pke warnings
 
@@ -60,29 +60,34 @@ class KeywordExplorer:
 
     def export(
         self,
-        output_filename: Optional[Union[str, Path]] = None,
-        output_format: ExportFormat | str = ExportFormat.EXCEL,
-    ) -> Dict[str, Dict[str, Any]]:
+        file: Optional[Union[str, Path]] = None,
+        format: ExportFormat | str = ExportFormat.EXCEL,
+        file_content=False,
+    ) -> Optional[str]:
         """Export keywords (and optional context) to a file.
 
         Args:
-            output_filename: Output file name or path (if None, use stdout)
-            output_format: Output format
+            file: Output file name or path. If None, return as a string; if empty string or "-" write to standard output.
+            format: Output format
+            file_content: If true, include full file content in exported data
 
         Raises:
             ValueError: No predicted keywords (nothing to export)
             ValueError: Unknown export format in `output_format`
         """
         data = self.training_and_predicted_keywords()
-        # join list items into single strings
+        if file_content:
+            training = self.config["training"]
+            file_dir = Path(training["directory"])
+            content_key = Exporter.CONTENT
+        # preprocess data
         for filename, contents in data.items():
-            for k, v in contents.items():
-                if isinstance(v, list):
-                    v = ";".join(v)
-                    data[filename][k] = v
-        # export the data
-        export(data, output_filename=output_filename, output_format=output_format)
-        return data
+            if file_content:
+                p = file_dir / filename
+                with p.open("r") as f:
+                    data[filename][content_key] = f.read()
+        # export the data (return value may be the data as string)
+        return export(data, output_filename=file, output_format=format)
 
     @property
     def file_keywords(self) -> dict[str, list[str]]:
