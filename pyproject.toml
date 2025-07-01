@@ -30,6 +30,7 @@ dynamic = ["version"]
 dependencies = [
     "scipy<=1.12",
     "beautifulsoup4",
+    "graphviz",
     "pandas",
     "openpyxl",
     "matplotlib",
