@@ -7,11 +7,10 @@ import pytest
 def test_excel_export(tmp_path):
     p = tmp_path / "excel_export.xls"
     # write out
-    with p.open("wb") as f:
-        with ExcelExporter(f) as e:
-            e.header(("item", "one", "two", "three"))
-            e.row(("foo", 1, 2, 3))
-            e.row(("bar", "a", "b", "c"))
+    with ExcelExporter(p) as e:
+        e.header(("item", "one", "two", "three"))
+        e.row(("foo", 1, 2, 3))
+        e.row(("bar", "a", "b", "c"))
     # read in
     with p.open("rb") as f:
         df = pd.read_excel(f)
@@ -27,18 +26,14 @@ def test_excel_export(tmp_path):
 def test_json_export(tmp_path):
     p = tmp_path / "json_export.json"
     # write out
-    with p.open("w") as f:
-        with JsonExporter(
-            f,
-            {
-                "foo": {"one": 1, "two": 2, "three": 3},
-                "bar": {"one": "a", "two": "b", "three": "c"},
-            },
-        ) as e:
-            # e.header(("item", "one", "two", "three"))
-            # e.row(("foo", 1, 2, 3))
-            # e.row(("bar", "a", "b", "c"))
-            pass
+    with JsonExporter(
+        p,
+        {
+            "foo": {"one": 1, "two": 2, "three": 3},
+            "bar": {"one": "a", "two": "b", "three": "c"},
+        },
+    ) as e:
+        pass
     # read in
     with p.open("r") as f:
         d = json.load(f)
