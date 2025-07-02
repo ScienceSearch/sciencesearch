@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from string import punctuation
 import regex as re
+import pandas as pd
 
 _log = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ _log = logging.getLogger(__name__)
 class Preprocessor:
     """Preprocess text to remove extraneous symbols"""
 
-    def __init__(self):
+    def __init__(self, acronym_fp: str =  '../private_data/Acronym List 2025.xlsx'):
         """Constructor."""
         # chain together cleaning functions in this order
         self._functions = [
@@ -24,9 +25,25 @@ class Preprocessor:
             self._remove_numbers2,
             self._remove_non_ascii,
             self._remove_lone_punct,
+            self._remove_fps,
             self._remove_ws,
             self._turn_lower,
         ]
+
+
+        if acronym_fp:
+            # load in acronyms
+            acronyms_df = pd.read_excel(acronym_fp)
+            acronyms_df = acronyms_df.dropna(subset=['Full Name or Definition'])
+
+            # convert into a dictionary of acronym: replacement
+            acronym_conversions = dict(zip(acronyms_df['Acronym'], acronyms_df['Full Name or Definition']))
+            # only keep acronyms that are longer than one character
+            self.__acronym_conversions = {key.upper(): value for key, value in acronym_conversions.items() if len(key) > 1 or key == 'IT'}
+            del self.__acronym_conversions['IT']
+            print(self.__acronym_conversions)
+
+            self._functions.insert(8, self._replace_acronyms)
 
     def process_string(self, text: str) -> str:
         """Perform preprocessing on a text string.
@@ -37,6 +54,7 @@ class Preprocessor:
         Returns:
             str: Preprocessed string
         """
+        # print(text)
         return self._clean(text)
 
     def process_file(self, path: Path) -> str:
@@ -71,6 +89,15 @@ class Preprocessor:
         url_replacement = " "
         no_url_txt = re.sub(url_string, url_replacement, no_url_txt)
         return no_url_txt
+    
+    def _remove_fps(self, text):
+        """Remove data file paths"""
+        fp_str = r'data:image/[^"]*'
+        fp_replacement = " "
+        no_fp_txt = re.sub(fp_str, fp_replacement, text)
+        return no_fp_txt
+    
+
 
     def _remove_punctuation(self, text):
         """Remove Punctuation"""
@@ -82,6 +109,10 @@ class Preprocessor:
         remove = remove.replace(",", "")  # don't remove commas
         remove = remove.replace("’", "")  # don't remove apostrophes
         remove = remove.replace("'", "")  # don't remove apostrophes
+
+        # todo: sufi you are just testing this out
+        remove = remove.replace("_", "")  # don't remove apostrophes
+
 
         remove = remove.replace(
             "-", ""
@@ -137,3 +168,81 @@ class Preprocessor:
     def _turn_lower(self, text):
         """Turn into lowercase"""
         return text.lower()
+    
+
+    def _replace_acronyms(self, text: str) -> str:
+
+        """ Perform replacement of acryonyms to their full name
+        
+        Args:
+            text (str): Input string
+            fp (str): Pointer to list of acronyms
+
+        Returns:
+            str: Preprocessed string
+        """
+        print("_replace_acronyms")
+        patterns = []
+        for acronym in self.__acronym_conversions.keys():
+            patterns.extend([acronym.upper(), acronym.lower()])
+        # print("acronym text:", text)
+        regex_caps = r'[A-Z]{2,}'
+        regex_underscores = r'\b\w+_\w+(?:_\w+)*\b'
+        regex_str = f"{regex_caps}|{regex_underscores}"
+        re_new  = r'(?<![a-zA-Z])DET(?![a-zA-Z])'
+        # pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for acronym in self.__acronym_conversions.keys()) + r')(?![a-zA-Z])'
+        # pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for acronym in self.__acronym_conversions.keys()) + r')(?![A-Z])'
+        pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for  acronym in patterns) + r')(?![A-Z])'
+        compiled_pattern = re.compile(pattern)
+        # print(compiled_pattern)
+        # print(regex_str)
+
+        # print(re.findall(compiled_pattern, text))
+        res_str = re.sub(compiled_pattern, self._replace_acronym, text)  
+        # df_logbook_params['caps'] = df_logbook_params.apply(lambda x: re.findall(regex_caps, x['content'])
+        # print(res_str)
+        # print("_replace_acronyms_end")
+
+
+        return res_str
+    
+
+    # def _find_acronym(self, text):
+    #     regex_caps = r'[A-Z]{2,}'
+    #     regex_underscores = r'\b\w+_\w+(?:_\w+)*\b'
+
+    #     matches_caps = re.findall(regex_caps, text):
+    #     matches_underscores = re.findall(regex_underscores, text)
+
+    #     return all_acryonyms =  matches_caps + matches_underscores
+
+    def _replace_acronym(self, acronym):
+        # print("la_replace_acronymst", acronym.group())
+        # print(acronym.group())
+
+        if acronym.group() == 'IT' or acronym.group() == 'it':
+            print("yay")
+            print(self.__acronym_conversions.get(acronym.group().upper(),acronym.group()))
+        return self.__acronym_conversions.get(acronym.group().upper(),acronym.group())
+
+
+
+# # replacement function to convert uppercase word to lowercase
+# # and lowercase word to uppercase
+# def convert_case(match_obj):
+#     if match_obj.group(1) is not None:
+#         return match_obj.group(1).lower()
+#     if match_obj.group(2) is not None:
+#         return match_obj.group(2).upper()
+
+# # Original String
+# str = "EMMA loves PINEAPPLE dessert and COCONUT ice CREAM"
+
+# # group 1 [A-Z]+ matches uppercase words
+# # group 2 [a-z]+ matches lowercase words
+# # pass replacement function 'convert_case' to re.sub()
+# res_str = re.sub(r"([A-Z]+)|([a-z]+)", convert_case, str)
+
+# # String after replacement
+# print(res_str)
+# # Output 'emma LOVES pineapple DESSERT AND coconut ICE cream'
