@@ -30,7 +30,6 @@ class Preprocessor:
             self._turn_lower,
         ]
 
-
         if acronym_fp:
             # load in acronyms
             acronyms_df = pd.read_excel(acronym_fp)
@@ -43,9 +42,7 @@ class Preprocessor:
             del self.__acronym_conversions['IT']
             print(self.__acronym_conversions)
 
-            self._functions.insert(8, self._replace_acronyms)
-
-    def process_string(self, text: str) -> str:
+    def process_string(self, text: str, replace_abbrv: bool = False) -> str:
         """Perform preprocessing on a text string.
 
         Args:
@@ -55,6 +52,9 @@ class Preprocessor:
             str: Preprocessed string
         """
         # print(text)
+        if replace_abbrv and self.__acronym_conversions:
+            self._functions.insert(8, self._replace_acronyms)
+
         return self._clean(text)
 
     def process_file(self, path: Path) -> str:
@@ -185,64 +185,12 @@ class Preprocessor:
         patterns = []
         for acronym in self.__acronym_conversions.keys():
             patterns.extend([acronym.upper(), acronym.lower()])
-        # print("acronym text:", text)
-        regex_caps = r'[A-Z]{2,}'
-        regex_underscores = r'\b\w+_\w+(?:_\w+)*\b'
-        regex_str = f"{regex_caps}|{regex_underscores}"
-        re_new  = r'(?<![a-zA-Z])DET(?![a-zA-Z])'
-        # pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for acronym in self.__acronym_conversions.keys()) + r')(?![a-zA-Z])'
-        # pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for acronym in self.__acronym_conversions.keys()) + r')(?![A-Z])'
         pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for  acronym in patterns) + r')(?![A-Z])'
         compiled_pattern = re.compile(pattern)
-        # print(compiled_pattern)
-        # print(regex_str)
 
-        # print(re.findall(compiled_pattern, text))
         res_str = re.sub(compiled_pattern, self._replace_acronym, text)  
-        # df_logbook_params['caps'] = df_logbook_params.apply(lambda x: re.findall(regex_caps, x['content'])
-        # print(res_str)
-        # print("_replace_acronyms_end")
-
 
         return res_str
-    
-
-    # def _find_acronym(self, text):
-    #     regex_caps = r'[A-Z]{2,}'
-    #     regex_underscores = r'\b\w+_\w+(?:_\w+)*\b'
-
-    #     matches_caps = re.findall(regex_caps, text):
-    #     matches_underscores = re.findall(regex_underscores, text)
-
-    #     return all_acryonyms =  matches_caps + matches_underscores
 
     def _replace_acronym(self, acronym):
-        # print("la_replace_acronymst", acronym.group())
-        # print(acronym.group())
-
-        if acronym.group() == 'IT' or acronym.group() == 'it':
-            print("yay")
-            print(self.__acronym_conversions.get(acronym.group().upper(),acronym.group()))
         return self.__acronym_conversions.get(acronym.group().upper(),acronym.group())
-
-
-
-# # replacement function to convert uppercase word to lowercase
-# # and lowercase word to uppercase
-# def convert_case(match_obj):
-#     if match_obj.group(1) is not None:
-#         return match_obj.group(1).lower()
-#     if match_obj.group(2) is not None:
-#         return match_obj.group(2).upper()
-
-# # Original String
-# str = "EMMA loves PINEAPPLE dessert and COCONUT ice CREAM"
-
-# # group 1 [A-Z]+ matches uppercase words
-# # group 2 [a-z]+ matches lowercase words
-# # pass replacement function 'convert_case' to re.sub()
-# res_str = re.sub(r"([A-Z]+)|([a-z]+)", convert_case, str)
-
-# # String after replacement
-# print(res_str)
-# # Output 'emma LOVES pineapple DESSERT AND coconut ICE cream'
