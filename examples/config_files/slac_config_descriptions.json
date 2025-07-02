@@ -86,7 +86,9 @@
         "input_files": ["*.txt"],
         "keywords": ["slac_keywords.csv"],
         "epsilon": 0.05,
-        "save_file": "slac_hyper_descriptions.pkl"
+        "save_file": "slac_hyper_descriptions.pkl",
+        "replacement_dict": "../private_data/Acronym List 2025.xlsx"
+
     },
     "saving": {
         "css_filepath": "../../shared/keyword_vis.css",
