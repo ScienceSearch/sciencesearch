@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import pandas as pd
 from sciencesearch.nlp.preprocessing import Preprocessor
+import csv
 
 
 class SLACDatabaseDataExtractor:
@@ -67,6 +68,15 @@ class SLACDatabaseDataExtractor:
             )
             with open(f"{folder_path}/{experiment_name}.txt", "w") as f:
                 f.write(content_cleaned)
+            
+            if self.replace_abbrv:
+                fields=[experiment_name, str(dict(self.preprocessor.get_abbrv(row[col_to_save])))]
+                with open(f"{folder_path}/replaced_abbrv2.csv", "a") as fd:
+                    writer = csv.writer(fd)
+                    writer.writerow(fields)
+                    fd.close()
+            
+
 
     def create_pattern_matching_sql(self):
         patterns = self._query_info["parameter_patterns"]
