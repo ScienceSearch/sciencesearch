@@ -3,6 +3,7 @@ black[jupyter]==24.3.0
 pylint
 gensim
 graphviz
+openpyxl
 pandas
 matplotlib
 rake_nltk
