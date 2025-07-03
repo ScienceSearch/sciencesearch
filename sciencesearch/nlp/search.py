@@ -10,6 +10,9 @@ import importlib
 import json
 import logging
 from pathlib import Path
+from typing import Dict, Any, Optional, Union
+
+# third-party
 import pandas as pd
 
 
@@ -18,6 +21,7 @@ from .sweep import Sweep
 from .hyper import Hyper
 from .train import load_hyper, run_hyper, train_hyper
 from .visualize_kws import JsonView
+from .export import ExportFormat, export, Exporter
 
 logging.root.setLevel(logging.ERROR)  # quiet pke warnings
 
@@ -53,6 +57,37 @@ class KeywordExplorer:
         for fname, kwlist in file_keywords.items():
             for kw in kwlist:
                 self._db[kw].add(fname)
+
+    def export(
+        self,
+        file: Optional[Union[str, Path]] = None,
+        format: ExportFormat | str = ExportFormat.EXCEL,
+        file_content=False,
+    ) -> Optional[str]:
+        """Export keywords (and optional context) to a file.
+
+        Args:
+            file: Output file name or path. If None, return as a string; if empty string or "-" write to standard output.
+            format: Output format
+            file_content: If true, include full file content in exported data
+
+        Raises:
+            ValueError: No predicted keywords (nothing to export)
+            ValueError: Unknown export format in `output_format`
+        """
+        data = self.training_and_predicted_keywords()
+        if file_content:
+            training = self.config["training"]
+            file_dir = Path(training["directory"])
+            content_key = Exporter.CONTENT
+        # preprocess data
+        for filename, contents in data.items():
+            if file_content:
+                p = file_dir / filename
+                with p.open("r") as f:
+                    data[filename][content_key] = f.read()
+        # export the data (return value may be the data as string)
+        return export(data, output_filename=file, output_format=format)
 
     @property
     def file_keywords(self) -> dict[str, list[str]]:
