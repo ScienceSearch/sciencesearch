@@ -5,9 +5,10 @@ Preprocess text.
 import logging
 from pathlib import Path
 from string import punctuation
+from collections import Counter
 import regex as re
 import pandas as pd
-from collections import Counter
+from bs4 import BeautifulSoup
 
 _log = logging.getLogger(__name__)
 
@@ -20,13 +21,13 @@ class Preprocessor:
         # chain together cleaning functions in this order
         self._functions = [
             self._remove_newlines,
+            self._parse_html,
             self._remove_urls,
             self._remove_punctuation,
             self._remove_numbers,
             self._remove_numbers2,
             self._remove_non_ascii,
             self._remove_lone_punct,
-            self._remove_fps,
             self._remove_ws,
             self._turn_lower,
         ]
@@ -56,6 +57,7 @@ class Preprocessor:
             del self._acronym_conversions["KB"]
             del self._acronym_conversions["STA"]
             del self._acronym_conversions["AIR"]
+            del self._acronym_conversions["MRCO"]
 
     def process_string(self, text: str, replace_abbrv: bool = False) -> str:
         """Perform preprocessing on a text string.
@@ -105,12 +107,10 @@ class Preprocessor:
         no_url_txt = re.sub(url_string, url_replacement, no_url_txt)
         return no_url_txt
 
-    def _remove_fps(self, text):
-        """Remove data file paths"""
-        fp_str = r'data:image[^"]*'
-        fp_replacement = " "
-        no_fp_txt = re.sub(fp_str, fp_replacement, text)
-        return no_fp_txt
+    def _parse_html(self, text):
+        """Remove HTML tags"""
+        no_html_text = BeautifulSoup(text, "lxml").text
+        return no_html_text
 
     def _remove_punctuation(self, text):
         """Remove Punctuation"""
