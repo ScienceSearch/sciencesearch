@@ -122,8 +122,6 @@ class Preprocessor:
         remove = remove.replace(",", "")  # don't remove commas
         remove = remove.replace("’", "")  # don't remove apostrophes
         remove = remove.replace("'", "")  # don't remove apostrophes
-
-        # todo: sufi you are just testing this out
         remove = remove.replace("_", "")  # don't remove apostrophes
 
         remove = remove.replace(
@@ -195,12 +193,6 @@ class Preprocessor:
         for acronym in self._acronym_conversions.keys():
             patterns.extend([acronym.upper(), acronym.lower()])
         patterns = sorted(self._acronym_conversions.keys(), key=len, reverse=True)
-        # pattern = (
-        #     r"(?<![a-zA-Z])(?:"
-        #     + "|".join(re.escape(acronym) for acronym in patterns)
-        #     + r")(?![A-Z])"
-        # )
-        # pattern = r'(?<![a-zA-Z])(?:' + '|'.join(re.escape(acronym) for acronym in patterns) + r')(?![a-zA-Z])'
         pattern = (
             r"(?<![a-zA-Z])(?:"
             + "|".join(re.escape(acronym) for acronym in patterns)
