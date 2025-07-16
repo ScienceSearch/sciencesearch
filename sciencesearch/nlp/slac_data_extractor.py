@@ -2,9 +2,9 @@ import sqlite3
 from sqlite3 import Cursor
 import json
 from pathlib import Path
+import csv
 import pandas as pd
 from sciencesearch.nlp.preprocessing import Preprocessor
-import csv
 
 
 class SLACDatabaseDataExtractor:
@@ -19,11 +19,17 @@ class SLACDatabaseDataExtractor:
             self._query_info = json.load(f)
         self.replace_abbrv = replace_abbrv
         if replace_abbrv:
-            print(replacement_fp)
             self.preprocessor = Preprocessor()
             self.preprocessor._setup_replacement_dict(replacement_fp)
         else:
             self.preprocessor = Preprocessor()
+        # TODO: generalize this
+        folder_path = Path(self.training_file_path)
+        fields = ["experiment_name", "acronyms"]
+        with open(f"{folder_path}/replaced_abbrv2.csv", "w") as fd:
+            writer = csv.writer(fd)
+            writer.writerow(fields)
+            fd.close()
 
     def create_connection(self) -> Cursor:
         self.connection = sqlite3.connect(self.fp)
@@ -51,7 +57,7 @@ class SLACDatabaseDataExtractor:
     def join_runs_by_experiment(self, df: pd.DataFrame):
         experiment_summaries = (
             df.groupby("experiment_name")["content"]
-            .apply(lambda x: " ".join(x.dropna().astype(str)))
+            .apply(lambda x: ". ".join(x.dropna().astype(str)))
             .reset_index()
         )
         return experiment_summaries
