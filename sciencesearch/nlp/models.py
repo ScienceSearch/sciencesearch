@@ -119,6 +119,7 @@ class Parameters:
                             f"Value for parameter '{k}' ({v}), is not type {v_types[k]}"
                         )
                 self._v[k] = v
+                print(f"value: {self._v}, key {k}, new val {v}")
             except KeyError:
                 me = self.__class__.__name__
                 raise ValueError(f"Unknown parameter '{k}' for {me}")
@@ -177,7 +178,11 @@ class Algorithm(ABC):
             check_types: Whether to check parameter types
             params: Parameter values
         """
+        print(f"before input params {params}")
+
         self.params = Parameters(self.PARAM_SPEC, params, check_types=check_types)
+        print(f"params after {self.params}")
+
         if self.params.stopwords is None:
             stemmer = CaseSensitiveStemmer() if self.params.stemming else NullStemmer()
             self.params.stopwords = Stopwords(stemmer=stemmer)
@@ -190,6 +195,9 @@ class Algorithm(ABC):
                 )
         self._run_timings = {}
         self._name = self.__class__.__name__
+
+        print(f"num keywords after {self.params.num_keywords}")
+        print(f"params after {str(self.params.num_keywords)}")
 
     @classmethod
     def get_params(cls):
@@ -364,28 +372,6 @@ class Algorithm(ABC):
             _log.debug(f"_scale_scores: raw={scores} ; scaled={result}")
         return result
 
-    def _reduce_duplicates(self, keywords):
-        def reducer(s):
-            words = s.split()
-            if not words:
-                return s
-
-            if all(word == words[0] for word in words):
-                return words[0]
-            return s
-
-        reduced = [reducer(s) for s in keywords]
-
-        return reduced
-
-    def _remove_substrings(self, keywords):
-        longest_kws = [
-            s
-            for s in keywords
-            if not any(s != other and s in other for other in keywords)
-        ]
-        return longest_kws
-
 
 ## Algorithms
 class KPMiner(Algorithm):
@@ -424,8 +410,10 @@ class KPMiner(Algorithm):
 
     def __init__(self, **kwargs):
         """Constructor"""
+        print(f"KP MINER HERE {kwargs}")
         super().__init__(**kwargs)
         self._extractor = pke.unsupervised.KPMiner()
+        print(f"kp nnum keywords {self.params.num_keywords}")
 
     def _get_keywords(self, text):
         print("getting kp miner keywords")
@@ -449,21 +437,14 @@ class KPMiner(Algorithm):
         # separate keywords from scores
         keywords = list(map(itemgetter(0), kw_score))
 
-        remove_duplicated_kws = self._reduce_duplicates(keywords)
-        remove_substring_kws = self._remove_substrings(remove_duplicated_kws)
-
-        # optionally sort by provided criteria
-        print(f"keywords and scores kp miner: {keywords}")
-        print(f"keywords reduced kp miner: {remove_substring_kws}")
-
-        print(f"keyword_sort param kp miner: {self.params.keyword_sort}")
+        # # optionally sort by provided criteria
         if self.params.keyword_sort:
             print("in kp miner sort")
             scores = list(map(itemgetter(1), kw_score))
             kw = list(self._sort(keywords, scores, text))
         else:
             kw = list(keywords)
-        return remove_substring_kws
+        return keywords[: self.params.num_keywords]
 
 
 class Rake(Algorithm):
@@ -500,6 +481,8 @@ class Rake(Algorithm):
 
     def __init__(self, **kwargs):
         """Constructor"""
+        print(f"RAKE  HERE {kwargs}")
+
         super().__init__(**kwargs)
         self._extractor = _Rake(
             stopwords=self.params.stopwords.stopwords,
@@ -508,6 +491,7 @@ class Rake(Algorithm):
             include_repeated_phrases=self.params.include_repeated_phrases,
             ranking_metric=self.params.ranking_metric,
         )
+        print(f"rake nnum keywords {self.params.num_keywords}")
 
     def _get_keywords(self, text: str) -> list[str]:
         print("getting rake keywords")
@@ -520,15 +504,8 @@ class Rake(Algorithm):
         score_kw = [item for item in score_kw if len(item[1]) >= self.params.min_kw_len]
         # separate keywords from scores
         keywords = list(map(itemgetter(1), score_kw))
-        print(f"keywords and scores rake: {keywords}")
 
-        remove_duplicated_kws = self._reduce_duplicates(keywords)
-        remove_substring_kws = self._remove_substrings(remove_duplicated_kws)
-        print(f"keywords reduced rake: {remove_substring_kws}")
-
-        # optionally sort by provided criteria
-        print(f"keyword_sort param rake: {self.params.keyword_sort}")
-
+        # # optionally sort by provided criteria
         if self.params.keyword_sort:
             print("in rake sort")
 
@@ -536,7 +513,7 @@ class Rake(Algorithm):
             kw = list(self._sort(keywords, scores, text))
         else:
             kw = list(keywords)
-        return remove_substring_kws  # [: self.params.num_keywords] // see the original
+        return keywords[: self.params.num_keywords]  # see original
 
 
 class Yake(Algorithm):
@@ -549,6 +526,8 @@ class Yake(Algorithm):
 
     def __init__(self, **kwargs):
         """Constructor"""
+        print(f"YAKE HERE {kwargs} ")
+
         super().__init__(**kwargs)
 
         # Initialize Yake
@@ -560,6 +539,7 @@ class Yake(Algorithm):
             windowsSize=self.params.ws,
             stopwords=self.params.stopwords.stopwords,
         )
+        print(f"yake nnum keywords {self.params.num_keywords}")
 
     def _get_keywords(self, text: str) -> list[str]:
         """Get YAKE keywords
@@ -577,13 +557,8 @@ class Yake(Algorithm):
             _log.debug(f"Raw Yake result: {kw_score}")
         # separate keywords from scores
         keywords = list(map(itemgetter(0), kw_score))
-        # optionally sort by provided criteria
-        print(f"keywords and scores yake: {keywords}")
-        print(f"keyword_sort param yake: {self.params.keyword_sort}")
-
-        remove_duplicated_kws = self._reduce_duplicates(keywords)
-        remove_substring_kws = self._remove_substrings(remove_duplicated_kws)
-        print(f"keywords reduced yake: {remove_substring_kws}")
+        remove_period_kws = [item for item in keywords if "." not in item]
+        # print(f"keywords reduced yake: {remove_period_kws[: self.params.num_keywords] }")
 
         if self.params.keyword_sort:
             print("in yake sort")
@@ -591,11 +566,14 @@ class Yake(Algorithm):
             kw = list(self._sort(keywords, scores, text))
         else:
             kw = list(keywords)
-        return remove_substring_kws
+        return remove_period_kws[: self.params.num_keywords]
 
 
 class Ensemble(Algorithm):
     def __init__(self, *algs, **kwargs):
+        print(f"ensemble {kwargs}")
+        # print(f"ens {num_keywords}")
+
         if "stopwords" not in kwargs:
             # don't add default stopwords
             kwargs["stopwords"] = []
@@ -611,12 +589,16 @@ class Ensemble(Algorithm):
         max_keywords = num_algorithms * tot
 
         keyword_iterators = [iter(alg.run(text)) for alg in self._algorithms]
+        reuced_keywords = [
+            iter(remove_substrings(reduce_duplicates(list(kws))))
+            for kws in keyword_iterators
+        ]
         merged_kw = set()
 
         while len(merged_kw) < max_keywords:
             added_this_round = False
 
-            for iterator in keyword_iterators:
+            for iterator in reuced_keywords:
                 if len(merged_kw) >= max_keywords:
                     break
                 try:
@@ -629,4 +611,28 @@ class Ensemble(Algorithm):
             if not added_this_round:
                 break
 
-        return list(merged_kw)
+        reduce_dups_kws = reduce_duplicates(list(merged_kw))
+        remove_subtrs_kws = remove_substrings(reduce_dups_kws)
+        return remove_subtrs_kws
+
+
+def reduce_duplicates(keywords):
+    def reducer(s):
+        words = s.split()
+        if not words:
+            return s
+
+        if all(word == words[0] for word in words):
+            return words[0]
+        return s
+
+    reduced = [reducer(s) for s in keywords]
+
+    return reduced
+
+
+def remove_substrings(keywords):
+    longest_kws = [
+        s for s in keywords if not any(s != other and s in other for other in keywords)
+    ]
+    return longest_kws
