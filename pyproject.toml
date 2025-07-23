@@ -38,7 +38,7 @@ dependencies = [
     "rake_nltk",
     "scikit-learn",
     "yake",
-    "pke@git+https://github.com/boudinfl/pke.git"
+    "pke@git+https://github.com/boudinfl/pke.git",
     "lxml"
 ]
 [project.optional-dependencies]
