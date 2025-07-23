@@ -431,7 +431,7 @@ class KPMiner(Algorithm):
             kw = list(self._sort(keywords, scores, text))
         else:
             kw = list(keywords)
-        return keywords[: self.params.num_keywords]
+        return kw[: self.params.num_keywords]
 
 
 class Rake(Algorithm):
@@ -495,7 +495,7 @@ class Rake(Algorithm):
             kw = list(self._sort(keywords, scores, text))
         else:
             kw = list(keywords)
-        return keywords[: self.params.num_keywords]  # see original
+        return kw[: self.params.num_keywords]  # see original
 
 
 class Yake(Algorithm):
@@ -540,8 +540,8 @@ class Yake(Algorithm):
             scores = list(map(itemgetter(1), kw_score))
             kw = list(self._sort(keywords, scores, text))
         else:
-            kw = list(keywords)
-        return remove_period_kws[: self.params.num_keywords]
+            kw = [item for item in keywords if "." not in item]
+        return kw[: self.params.num_keywords]
 
 
 class Ensemble(Algorithm):

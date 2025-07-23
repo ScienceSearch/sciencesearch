@@ -50,8 +50,6 @@ class Preprocessor:
                 for key, value in acronym_conversions.items()
                 if len(key) > 1 or key == "IT"
             }
-            print("created")
-
             del self._acronym_conversions["IT"]
             del self._acronym_conversions["MFX"]
             del self._acronym_conversions["KB"]
