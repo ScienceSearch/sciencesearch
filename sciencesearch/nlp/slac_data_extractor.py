@@ -57,7 +57,7 @@ class SLACDatabaseDataExtractor:
     def join_runs_by_experiment(self, df: pd.DataFrame):
         experiment_summaries = (
             df.groupby("experiment_name")["content"]
-            .apply(lambda x: ". ".join(x.dropna().astype(str)))
+            .apply(lambda x: ". ".join(x.dropna().astype(str).str.strip()))
             .reset_index()
         )
         return experiment_summaries
