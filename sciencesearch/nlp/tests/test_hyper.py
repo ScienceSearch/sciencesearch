@@ -4,7 +4,7 @@ Test of hyper module
 
 import pytest
 from sciencesearch.nlp.hyper import Hyper
-from .test_sweep import sweep_text, kpminer_sweep, rake_sweep, yake_sweep
+from .test_sweep import sweep_text, kpminer_sweep, yake_sweep, rake_sweep
 
 
 @pytest.mark.unit

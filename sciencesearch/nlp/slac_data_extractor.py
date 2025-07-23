@@ -2,25 +2,39 @@ import sqlite3
 from sqlite3 import Cursor
 import json
 from pathlib import Path
+import csv
 import pandas as pd
 from sciencesearch.nlp.preprocessing import Preprocessor
 
 
 class SLACDatabaseDataExtractor:
-    def __init__(self, config_file: str):
+    def __init__(self, config_file: str, replace_abbrv: bool = False):
         conf = json.load(open(config_file))
         training = conf["training"]
         self.training_file_path = Path(training["directory"])
+        replacement_fp = Path(training["replacement_dict"])
         self.fp = conf["database"]
         self.connected = False
         with open("../private_data/queries_info.json", "r") as f:
             self._query_info = json.load(f)
+        self.replace_abbrv = replace_abbrv
+        if replace_abbrv:
+            self.preprocessor = Preprocessor()
+            self.preprocessor._setup_replacement_dict(replacement_fp)
+        else:
+            self.preprocessor = Preprocessor()
+        # TODO: generalize this
+        folder_path = Path(self.training_file_path)
+        fields = ["experiment_name", "acronyms"]
+        with open(f"{folder_path}/replaced_abbrv2.csv", "w") as fd:
+            writer = csv.writer(fd)
+            writer.writerow(fields)
+            fd.close()
 
     def create_connection(self) -> Cursor:
         self.connection = sqlite3.connect(self.fp)
         self.connected = True
         self.cursor = self.connection.cursor()
-        self.preprocessor = Preprocessor()
 
     def close_connection(self):
         # self.connection.close()
@@ -43,7 +57,7 @@ class SLACDatabaseDataExtractor:
     def join_runs_by_experiment(self, df: pd.DataFrame):
         experiment_summaries = (
             df.groupby("experiment_name")["content"]
-            .apply(lambda x: " ".join(x.dropna().astype(str)))
+            .apply(lambda x: ". ".join(x.dropna().astype(str).str.strip()))
             .reset_index()
         )
         return experiment_summaries
@@ -55,9 +69,21 @@ class SLACDatabaseDataExtractor:
 
         for index, row in df.iterrows():
             experiment_name = row["experiment_name"]
-            content_cleaned = self.preprocessor.process_string(row[col_to_save])
+            content_cleaned = self.preprocessor.process_string(
+                row[col_to_save], replace_abbrv=self.replace_abbrv
+            )
             with open(f"{folder_path}/{experiment_name}.txt", "w") as f:
                 f.write(content_cleaned)
+
+            if self.replace_abbrv:
+                fields = [
+                    experiment_name,
+                    str(dict(self.preprocessor.get_abbrv(row[col_to_save]))),
+                ]
+                with open(f"{folder_path}/replaced_abbrv2.csv", "a") as fd:
+                    writer = csv.writer(fd)
+                    writer.writerow(fields)
+                    fd.close()
 
     def create_pattern_matching_sql(self):
         patterns = self._query_info["parameter_patterns"]

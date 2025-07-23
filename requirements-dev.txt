@@ -12,3 +12,4 @@ yake
 pytest==7.*
 pytest-cov
 git+https://github.com/boudinfl/pke.git
+lxml

@@ -10,7 +10,7 @@ import importlib
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Optional, Union
 
 # third-party
 import pandas as pd
@@ -185,7 +185,7 @@ class KeywordExplorer:
         # run 'best' algorithm on input files
         for input_file_pat in training["input_files"]:
             for fname in glob(input_file_pat, root_dir=file_dir):
-                kw = run_hyper(hyper_results, file_dir / fname)
+                kw = run_hyper(hyper_results, file_dir / fname, num_keywords=10)
                 search_kw[fname] = kw
         # initialize this class with results
         return cls(

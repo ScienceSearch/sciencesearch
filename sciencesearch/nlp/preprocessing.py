@@ -5,7 +5,10 @@ Preprocess text.
 import logging
 from pathlib import Path
 from string import punctuation
+from collections import Counter
 import regex as re
+import pandas as pd
+from bs4 import BeautifulSoup
 
 _log = logging.getLogger(__name__)
 
@@ -18,6 +21,7 @@ class Preprocessor:
         # chain together cleaning functions in this order
         self._functions = [
             self._remove_newlines,
+            self._parse_html,
             self._remove_urls,
             self._remove_punctuation,
             self._remove_numbers,
@@ -28,7 +32,32 @@ class Preprocessor:
             self._turn_lower,
         ]
 
-    def process_string(self, text: str) -> str:
+    def _setup_replacement_dict(
+        self, acronym_fp: str = "../private_data/Acronym List 2025.xlsx"
+    ):
+        if acronym_fp:
+            # load in acronyms
+            acronyms_df = pd.read_excel(acronym_fp)
+            acronyms_df = acronyms_df.dropna(subset=["Full Name or Definition"])
+
+            # convert into a dictionary of acronym: replacement
+            acronym_conversions = dict(
+                zip(acronyms_df["Acronym"], acronyms_df["Full Name or Definition"])
+            )
+            # only keep acronyms that are longer than one character
+            self._acronym_conversions = {
+                key: value
+                for key, value in acronym_conversions.items()
+                if len(key) > 1 or key == "IT"
+            }
+            del self._acronym_conversions["IT"]
+            del self._acronym_conversions["MFX"]
+            del self._acronym_conversions["KB"]
+            del self._acronym_conversions["STA"]
+            del self._acronym_conversions["AIR"]
+            del self._acronym_conversions["MRCO"]
+
+    def process_string(self, text: str, replace_abbrv: bool = False) -> str:
         """Perform preprocessing on a text string.
 
         Args:
@@ -37,6 +66,10 @@ class Preprocessor:
         Returns:
             str: Preprocessed string
         """
+        # print(text)
+        if replace_abbrv and self._acronym_conversions:
+            self._functions.insert(8, self._replace_acronyms)
+
         return self._clean(text)
 
     def process_file(self, path: Path) -> str:
@@ -72,6 +105,11 @@ class Preprocessor:
         no_url_txt = re.sub(url_string, url_replacement, no_url_txt)
         return no_url_txt
 
+    def _parse_html(self, text):
+        """Remove HTML tags"""
+        no_html_text = BeautifulSoup(text, "lxml").text
+        return no_html_text
+
     def _remove_punctuation(self, text):
         """Remove Punctuation"""
         #  Define punctuation to remove (excluding ., -, :, ;)
@@ -82,6 +120,7 @@ class Preprocessor:
         remove = remove.replace(",", "")  # don't remove commas
         remove = remove.replace("’", "")  # don't remove apostrophes
         remove = remove.replace("'", "")  # don't remove apostrophes
+        remove = remove.replace("_", "")  # don't remove apostrophes
 
         remove = remove.replace(
             "-", ""
@@ -137,3 +176,48 @@ class Preprocessor:
     def _turn_lower(self, text):
         """Turn into lowercase"""
         return text.lower()
+
+    def _replace_acronyms(self, text: str) -> str:
+        """Perform replacement of acryonyms to their full name
+
+        Args:
+            text (str): Input string
+            fp (str): Pointer to list of acronyms
+
+        Returns:
+            str: Preprocessed string
+        """
+        patterns = []
+        for acronym in self._acronym_conversions.keys():
+            patterns.extend([acronym.upper(), acronym.lower()])
+        patterns = sorted(self._acronym_conversions.keys(), key=len, reverse=True)
+        pattern = (
+            r"(?<![a-zA-Z])(?:"
+            + "|".join(re.escape(acronym) for acronym in patterns)
+            + r")(?![a-z])"
+        )
+        compiled_pattern = re.compile(pattern, re.IGNORECASE)
+        # compiled_pattern = re.compile(pattern)
+        res_str = re.sub(compiled_pattern, self._replace_acronym, text)
+
+        return res_str
+
+    def _replace_acronym(self, acronym):
+        return self._acronym_conversions.get(acronym.group().upper(), acronym.group())
+
+    def get_abbrv(self, text):
+        patterns = []
+        for acronym in self._acronym_conversions.keys():
+            patterns.extend([acronym.upper(), acronym.lower()])
+        patterns = sorted(self._acronym_conversions.keys(), key=len, reverse=True)
+
+        pattern = (
+            r"(?<![a-zA-Z])(?:"
+            + "|".join(re.escape(acronym) for acronym in patterns)
+            + r")(?![a-z])"
+        )
+        compiled_pattern = re.compile(pattern, re.IGNORECASE)
+        all_matches = re.findall(compiled_pattern, text)
+        c = Counter()
+        c.update(all_matches)
+        return c

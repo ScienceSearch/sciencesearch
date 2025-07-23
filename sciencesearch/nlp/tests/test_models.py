@@ -10,6 +10,8 @@ from sciencesearch.nlp.models import (
     Yake,
     KPMiner,
     PS,
+    reduce_duplicates,
+    remove_substrings,
 )
 
 
@@ -136,6 +138,7 @@ def test_kpminer():
     kp = KPMiner(num_keywords=n)
     text = kafka_text * 10
     kw = kp.run(text)
+    print(kw)
     assert len(kw) == n
     print(f"Keywords: {kw}")
     kw_lower = [x.lower() for x in kw]
@@ -147,6 +150,8 @@ def test_rake():
     n = 5
     rk = Rake(num_keywords=n)
     kw = rk.run(kafka_text)
+    print(kw)
+
     assert len(kw) == n
     print(f"Keywords: {kw}")
     kw_lower = [x.lower() for x in kw]
@@ -168,4 +173,6 @@ def test_multi_algorithm():
         .union(set(rk1.run(kafka_text)))
         .union(set(rk2.run(kafka_text)))
     )
-    assert sorted(ma_kw) == sorted(expect_kw)
+    reduce1 = reduce_duplicates(expect_kw)
+    reduce2 = remove_substrings(reduce1)
+    assert sorted(ma_kw) == sorted(reduce2)
