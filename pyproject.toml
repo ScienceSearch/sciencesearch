@@ -39,6 +39,7 @@ dependencies = [
     "scikit-learn",
     "yake",
     "pke@git+https://github.com/boudinfl/pke.git"
+    "lxml"
 ]
 [project.optional-dependencies]
 dev = [
