@@ -23,4 +23,3 @@ dependencies:
     - spacy
     - nltk
     - git+https://github.com/boudinfl/pke.git
-    - -e .
