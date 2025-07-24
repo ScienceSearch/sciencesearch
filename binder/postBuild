@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Download spaCy English model
+python -m spacy download en_core_web_sm
+
+# Download NLTK stopwords
+python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt_tab')
+"
+
+
+pip install -e .
