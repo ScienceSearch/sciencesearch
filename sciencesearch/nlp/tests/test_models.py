@@ -138,7 +138,6 @@ def test_kpminer():
     kp = KPMiner(num_keywords=n)
     text = kafka_text * 10
     kw = kp.run(text)
-    print(kw)
     assert len(kw) == n
     print(f"Keywords: {kw}")
     kw_lower = [x.lower() for x in kw]
@@ -150,8 +149,6 @@ def test_rake():
     n = 5
     rk = Rake(num_keywords=n)
     kw = rk.run(kafka_text)
-    print(kw)
-
     assert len(kw) == n
     print(f"Keywords: {kw}")
     kw_lower = [x.lower() for x in kw]
