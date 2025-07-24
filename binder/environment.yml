@@ -16,6 +16,7 @@ dependencies:
   - lxml
   - jupyter
   - jupyterlab
+  - graphviz
   - pip:
     - gensim
     - rake_nltk
