@@ -26,7 +26,7 @@ class SLACDatabaseDataExtractor:
         # TODO: generalize this
         folder_path = Path(self.training_file_path)
         fields = ["experiment_name", "acronyms"]
-        with open(f"{folder_path}/replaced_abbrv2.csv", "w") as fd:
+        with open(f"{folder_path}/replaced_abbr_counter.csv", "w") as fd:
             writer = csv.writer(fd)
             writer.writerow(fields)
             fd.close()
@@ -54,7 +54,7 @@ class SLACDatabaseDataExtractor:
         self.close_connection()
         return [x[0] for x in result]
 
-    def join_runs_by_experiment(self, df: pd.DataFrame):
+    def _join_runs_by_experiment(self, df: pd.DataFrame):
         experiment_summaries = (
             df.groupby("experiment_name")["content"]
             .apply(lambda x: ". ".join(x.dropna().astype(str).str.strip()))
@@ -62,7 +62,7 @@ class SLACDatabaseDataExtractor:
         )
         return experiment_summaries
 
-    def preprocess_and_save_files(self, df: pd.DataFrame, col_to_save: str):
+    def _preprocess_and_save_files(self, df: pd.DataFrame, col_to_save: str):
 
         folder_path = Path(self.training_file_path)
         folder_path.mkdir(parents=True, exist_ok=True)
@@ -111,9 +111,9 @@ class SLACDatabaseDataExtractor:
         query = "SELECT * FROM logbook_reduced"
 
         df_elogs = pd.read_sql(query, self.connection)
-        experiment_summaries = self.join_runs_by_experiment(df_elogs)
+        experiment_summaries = self._join_runs_by_experiment(df_elogs)
 
-        self.preprocess_and_save_files(experiment_summaries, "content")
+        self._preprocess_and_save_files(experiment_summaries, "content")
         self.close_connection()
         return experiment_summaries
 
@@ -122,7 +122,7 @@ class SLACDatabaseDataExtractor:
         query = "SELECT * FROM experiments"
         df_experiments = pd.read_sql(query, self.connection)
 
-        self.preprocess_and_save_files(df_experiments, "description")
+        self._preprocess_and_save_files(df_experiments, "description")
         for index, row in df_experiments.iterrows():
             experiment_id = row["experiment_name"]
             description = row["description"]
@@ -155,9 +155,9 @@ class SLACDatabaseDataExtractor:
         query = "SELECT * FROM logbook_parameters"
         df_logbook_params = pd.read_sql(query, self.connection)
 
-        experiment_summaries = self.join_runs_by_experiment(df_logbook_params)
+        experiment_summaries = self._join_runs_by_experiment(df_logbook_params)
 
-        self.preprocess_and_save_files(experiment_summaries, "content")
+        self._preprocess_and_save_files(experiment_summaries, "content")
 
         self.close_connection()
 
@@ -188,14 +188,7 @@ class SLACDatabaseDataExtractor:
         query = "SELECT * FROM logbook_commentary"
         df_logbook_not_params = pd.read_sql(query, self.connection)
 
-        experiment_summaries = self.join_runs_by_experiment(df_logbook_not_params)
-        self.preprocess_and_save_files(experiment_summaries, "content")
+        experiment_summaries = self._join_runs_by_experiment(df_logbook_not_params)
+        self._preprocess_and_save_files(experiment_summaries, "content")
 
         self.close_connection()
-
-
-def main():
-    de = SLACDatabaseDataExtractor(
-        config_file="examples/config_files/slac_config_params.json"
-    )
-    de.process_experiment_elog_parameters()
